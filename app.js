@@ -41,9 +41,9 @@ function init() {
 	resize();
 
 	let vertexData = [
-		-0.5, -0.5, 0.0,    0.5, 0.1, 0.1,
-		0.5, -0.5, 0.0,     0.2, 0.9, 0.7,
-		0.0, 0.5, 0.0,      0.4, 0.7, 0.7
+		-0.5, -0.5, 0.0,    1.0, 0.0, 0.0,
+		0.5, -0.5, 0.0,     0.0, 1.0, 0.0,
+		0.0, 0.5, 0.0,      0.0, 0.0, 1.0
 	];
 
 	let indexData = [
@@ -79,12 +79,14 @@ function init() {
 	let shaderProgram = gl.createProgram();
 	gl.attachShader(shaderProgram, vertexShader);
 	gl.attachShader(shaderProgram, fragmentShader);
+
 	gl.linkProgram(shaderProgram);
 	if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
 		console.error('Failed to link program');
 		return;
 	}
 
+	gl.validateProgram(shaderProgram);
 	if (!gl.getProgramParameter(shaderProgram, gl.VALIDATE_STATUS)) {
 		console.error('Failed to validate program');
 		return;
@@ -122,6 +124,4 @@ function init() {
 	gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
 	gl.drawElements(gl.TRIANGLES, indexData.length, gl.UNSIGNED_SHORT, 0);
-
-
 }
