@@ -6,9 +6,13 @@ var vertexShaderCode = [
 '',
 'varying vec3 fragColor;',
 '',
+'uniform mat4 mWorld;',
+'uniform mat4 mView;',
+'uniform mat4 mProj;',
+'',
 'void main(void) {',
 '	fragColor = color;',
-'	gl_Position = vec4(coordinates, 1.0);',
+'	gl_Position = mProj * mView * mWorld * vec4(coordinates, 1.0);',
 '}'
 ].join('\n');
 
@@ -31,23 +35,70 @@ function init() {
 		return;
 	}
 
-	function resize() {
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight;
-		gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-	}
+	var vertexData = 
+	[ // X, Y, Z           R, G, B
+		// Top
+		-1.0, 1.0, -1.0,   0.5, 0.5, 0.5,
+		-1.0, 1.0, 1.0,    0.5, 0.5, 0.5,
+		1.0, 1.0, 1.0,     0.5, 0.5, 0.5,
+		1.0, 1.0, -1.0,    0.5, 0.5, 0.5,
 
-	document.body.onresize = resize;
-	resize();
+		// Left
+		-1.0, 1.0, 1.0,    0.75, 0.25, 0.5,
+		-1.0, -1.0, 1.0,   0.75, 0.25, 0.5,
+		-1.0, -1.0, -1.0,  0.75, 0.25, 0.5,
+		-1.0, 1.0, -1.0,   0.75, 0.25, 0.5,
 
-	let vertexData = [
-		-0.5, -0.5, 0.0,    1.0, 0.0, 0.0,
-		0.5, -0.5, 0.0,     0.0, 1.0, 0.0,
-		0.0, 0.5, 0.0,      0.0, 0.0, 1.0
+		// Right
+		1.0, 1.0, 1.0,    0.25, 0.25, 0.75,
+		1.0, -1.0, 1.0,   0.25, 0.25, 0.75,
+		1.0, -1.0, -1.0,  0.25, 0.25, 0.75,
+		1.0, 1.0, -1.0,   0.25, 0.25, 0.75,
+
+		// Front
+		1.0, 1.0, 1.0,    1.0, 0.0, 0.15,
+		1.0, -1.0, 1.0,    1.0, 0.0, 0.15,
+		-1.0, -1.0, 1.0,    1.0, 0.0, 0.15,
+		-1.0, 1.0, 1.0,    1.0, 0.0, 0.15,
+
+		// Back
+		1.0, 1.0, -1.0,    0.0, 1.0, 0.15,
+		1.0, -1.0, -1.0,    0.0, 1.0, 0.15,
+		-1.0, -1.0, -1.0,    0.0, 1.0, 0.15,
+		-1.0, 1.0, -1.0,    0.0, 1.0, 0.15,
+
+		// Bottom
+		-1.0, -1.0, -1.0,   0.5, 0.5, 1.0,
+		-1.0, -1.0, 1.0,    0.5, 0.5, 1.0,
+		1.0, -1.0, 1.0,     0.5, 0.5, 1.0,
+		1.0, -1.0, -1.0,    0.5, 0.5, 1.0,
 	];
 
-	let indexData = [
-		0, 1, 2
+	var indexData =
+	[
+		// Top
+		0, 1, 2,
+		0, 2, 3,
+
+		// Left
+		5, 4, 6,
+		6, 4, 7,
+
+		// Right
+		8, 9, 10,
+		8, 10, 11,
+
+		// Front
+		13, 12, 14,
+		15, 14, 12,
+
+		// Back
+		16, 17, 18,
+		16, 18, 19,
+
+		// Bottom
+		21, 20, 22,
+		22, 20, 23
 	];
 
 	let vertexBuffer = gl.createBuffer();
@@ -121,7 +172,58 @@ function init() {
 	gl.clearColor(0.3, 0.7, 0.5, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
-	gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
-	gl.drawElements(gl.TRIANGLES, indexData.length, gl.UNSIGNED_SHORT, 0);
+	let matWorldUniformLocation = gl.getUniformLocation(shaderProgram, 'mWorld');
+	let matViewUniformLocation = gl.getUniformLocation(shaderProgram, 'mView');
+	let matProjUniformLocation = gl.getUniformLocation(shaderProgram, 'mProj');
+
+	let worldMatrix = new Float32Array(16);
+	let viewMatrix = new Float32Array(16);
+	let projMatrix = new Float32Array(16);
+	mat4.identity(worldMatrix);
+	mat4.lookAt(viewMatrix, [0, 0, -8], [0, 0, 0], [0, 1, 0]);
+	mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.clientWidth / canvas.clientHeight, 0.1, 1000.0);
+
+	gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
+	gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
+	gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
+
+	let xRotationMatrix = new Float32Array(16);
+	let yRotationMatrix = new Float32Array(16);
+
+	//
+	// resize handler
+	//
+	function resize() {
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+		gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+		mat4.perspective(projMatrix, glMatrix.toRadian(45), window.innerWidth / window.innerHeight, 0.1, 1000.0);
+		gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
+	}
+	document.body.onresize = resize;
+	resize();
+
+	//
+	// Main render loop
+	//
+	let identityMatrix = new Float32Array(16);
+	mat4.identity(identityMatrix);
+	let angle = 0;
+	let loop = function() {
+		angle = performance.now() / 1000 / 6 * 2 * Math.PI;
+		mat4.rotate(yRotationMatrix, identityMatrix, angle, [0, 1, 0]);
+		mat4.rotate(xRotationMatrix, identityMatrix, angle / 4, [1, 0, 0]);
+		mat4.mul(worldMatrix, yRotationMatrix, xRotationMatrix);
+		gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
+
+		gl.clearColor(0.75, 0.85, 0.8, 1.0);
+		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+		gl.drawElements(gl.TRIANGLES, indexData.length, gl.UNSIGNED_SHORT, 0);
+
+		requestAnimationFrame(loop);
+	};
+	requestAnimationFrame(loop);
 }
+
+// https://webglfundamentals.org/webgl/lessons/webgl-anti-patterns.html
