@@ -2,18 +2,48 @@
 
 <head>
 	<style>
-		* {
+		body {
 			padding: 0px;
 			margin: 0px;
 		}
+		#options {
+			position: absolute;
+			top: 10;
+			right: 10;
+			background: rgba(200, 200, 200, 0.5);
+			padding: 10;
+		}
+		h3 {
+			margin: 0;
+		}
+		.arrange-vertically > * {
+		    display: block;
+		}	
 	</style>
 	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="app.js"></script>
 </head>
 
 <body onload="init()">
+
 	<canvas id="glCanvas">
 	</canvas>
+
+	<div id="options">
+		<center>
+		<h3>
+			Settings
+		</h3>
+		</center>
+
+		<div><input type="checkbox" id="mouseLook">
+			Use mouse to look
+		</input></div>
+		<div><input type="checkbox" id="timeBased">
+			Use time based movement
+		</input></div>
+	</div>
+
 </body>
 
 </html>

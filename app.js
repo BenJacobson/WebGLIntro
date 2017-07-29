@@ -1,5 +1,5 @@
 var vertexShaderCode = [
-'precision mediump float;',
+'precision highp float;',
 '',
 'attribute vec3 coordinates;',
 'attribute vec3 color;',
@@ -16,7 +16,7 @@ var vertexShaderCode = [
 ].join('\n');
 
 var fragmentShaderCode = [
-'precision mediump float;',
+'precision highp float;',
 '',
 'varying vec3 fragColor;',
 '',
@@ -133,12 +133,12 @@ function init() {
 		let z = Math.floor(Math.random()*1000) - 500;
 		meshes.push(new Block(x, y, z));
 	}
-	let boundaries = 100000;
+	let boundaries = 10000;
 	meshes.push(new Plane(
-		-boundaries, -2.51, -boundaries,
-		-boundaries, -2.51, boundaries,
-		 boundaries, -2.51, boundaries,
-		 boundaries, -2.51, -boundaries,
+		-boundaries, -2.55, -boundaries,
+		-boundaries, -2.55, boundaries,
+		 boundaries, -2.55, boundaries,
+		 boundaries, -2.55, -boundaries,
 	));
 
 	let vertexData = Array.prototype.concat.apply([], meshes.map(p => p.customVertexData));
@@ -219,7 +219,7 @@ function init() {
 	gl.enableVertexAttribArray(attributeCoord);
 	gl.enableVertexAttribArray(attributeColor);
 
-	gl.clearColor(0.3, 0.7, 0.5, 1.0);
+	gl.clearColor(0.7, 0.9, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 
@@ -229,7 +229,7 @@ function init() {
 	let viewMatrix = new Float32Array(16);
 	let projMatrix = new Float32Array(16);
 	mat4.identity(viewMatrix);
-	mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.clientWidth / canvas.clientHeight, 1.0, 500.0);
+	mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.clientWidth / canvas.clientHeight, 1.0, 5000.0);
 
 	gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
 	gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
@@ -241,17 +241,32 @@ function init() {
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight;
 		gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-		mat4.perspective(projMatrix, glMatrix.toRadian(45), window.innerWidth / window.innerHeight, 1.0, 500.0);
+		mat4.perspective(projMatrix, glMatrix.toRadian(45), window.innerWidth / window.innerHeight, 1.0, 5000.0);
 		gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
 	}
 	document.body.onresize = resize;
 	resize();
 
 	//
-	// key handler
+	// state varialbes
 	//
 	let keysPressed = {};
+	let x=0, y=0, z=0, roty=0, rotx=0;
+	let mouseX = 0;
+	let mouseY = 0;
+	let origin = [0, 0, 0];
+	let change = true;
+	let TAU = Math.PI * 2;
+	let translateFactor = 15;
+	let rotateFactor = 1000;
+	let translateSpeed = 0.7;
+	let rotateSpeed = 0.03;
+	let mouseLook = false;
+	let timeBased = false;
 
+	//
+	// key handler
+	//
 	document.body.onkeydown = (event) => {
 		keysPressed[event.key] = performance.now();
 	};
@@ -261,19 +276,27 @@ function init() {
 	};
 
 	//
+	// mouse handler
+	//
+	document.body.onmousemove = (event) => {
+		mouseX = 2 * rotateSpeed * event.clientY / canvas.clientHeight - rotateSpeed;
+		mouseY = 2 * rotateSpeed * event.clientX / canvas.clientWidth - rotateSpeed;
+		mouseX = 10 * Math.abs(mouseX) * mouseX;
+		if (Math.abs(mouseY) < 0.0001) mouseY = 0;
+	};
+
+	//
 	// movement
 	//
-	let x=0, y=0, z=0, roty=0;
-	let origin = [0, 0, 0];
-
 	function move() {
-		let change = false;
 		let now = performance.now();
-		let speedFactor = 25;
 		if (keysPressed['w']) {
-			let speed = (now - keysPressed['w']) / speedFactor;
+			let speed =  (now - keysPressed['w']) / translateFactor;
 			keysPressed['w'] = now;
-			let v = [0, 0, speed];
+			let v = timeBased ?
+						[0, 0, speed] :
+						[0, 0, translateSpeed];
+			vec3.rotateX(v, v, origin, -rotx);
 			vec3.rotateY(v, v, origin, -roty);
 			x += v[0];
 			y += v[1];
@@ -281,9 +304,12 @@ function init() {
 			change = true;
 		}
 		if (keysPressed['s']) {
-			let speed = (now - keysPressed['s']) / speedFactor;
+			let speed = (now - keysPressed['s']) / translateFactor;
 			keysPressed['s'] = now;
-			let v = [0, 0, -speed];
+			let v = timeBased ?
+					[0, 0, -speed] :
+					[0, 0, -translateSpeed];
+			vec3.rotateX(v, v, origin, -rotx);
 			vec3.rotateY(v, v, origin, -roty);
 			x += v[0];
 			y += v[1];
@@ -291,9 +317,12 @@ function init() {
 			change = true;
 		}
 		if (keysPressed['a']) {
-			let speed = (now - keysPressed['a']) / speedFactor;
+			let speed = (now - keysPressed['a']) / translateFactor;
 			keysPressed['a'] = now;
-			let v = [speed, 0, 0];
+			let v = timeBased ?
+					[speed, 0, 0] :
+					[translateSpeed, 0, 0];
+			vec3.rotateX(v, v, origin, -rotx);
 			vec3.rotateY(v, v, origin, -roty);
 			x += v[0];
 			y += v[1];
@@ -301,9 +330,12 @@ function init() {
 			change = true;
 		}
 		if (keysPressed['d']) {
-			let speed = (now - keysPressed['d']) / speedFactor;
+			let speed = (now - keysPressed['d']) / translateFactor;
 			keysPressed['d'] = now;
-			let v = [-speed, 0, 0];
+			let v = timeBased ?
+					[-speed, 0, 0] :
+					[-translateSpeed, 0, 0];
+			vec3.rotateX(v, v, origin, -rotx);
 			vec3.rotateY(v, v, origin, -roty);
 			x += v[0];
 			y += v[1];
@@ -311,22 +343,64 @@ function init() {
 			change = true;
 		}
 		if (keysPressed['ArrowLeft']) {
-			let speed = (now - keysPressed['ArrowLeft']) / speedFactor;
+			let speed = (now - keysPressed['ArrowLeft']) / rotateFactor;
 			keysPressed['ArrowLeft'] = now;
-			roty -= speed / speedFactor;
+			roty -= timeBased ?
+					speed :
+					rotateSpeed;
+			if (roty < 0) {
+				roty += TAU;
+			}
 			change = true;
 		}
 		if (keysPressed['ArrowRight']) {
-			let speed = (now - keysPressed['ArrowRight']) / speedFactor;
+			let speed = (now - keysPressed['ArrowRight']) / rotateFactor;
 			keysPressed['ArrowRight'] = now;
-			roty += speed / speedFactor;
+			roty += timeBased ?
+					speed :
+					rotateSpeed;
+			if (roty > TAU) {
+				roty -= TAU;
+			}
+			change = true;
+		}
+		if (keysPressed['ArrowUp']) {
+			let speed = (now - keysPressed['ArrowUp']) / rotateFactor;
+			keysPressed['ArrowUp'] = now;
+			rotx -= timeBased ?
+					speed :
+					rotateSpeed;
+			if (rotx < 0) {
+				rotx += TAU;
+			}
+			change = true;
+		}
+		if (keysPressed['ArrowDown']) {
+			let speed = (now - keysPressed['ArrowDown']) / rotateFactor;
+			keysPressed['ArrowDown'] = now;
+			rotx += timeBased ?
+					speed :
+					rotateSpeed;
+			if (rotx > TAU) {
+				rotx -= TAU;
+			}
+			change = true;
+		}
+		if (mouseLook) {
+			rotx = mouseX * rotateFactor;
+			roty += mouseY;
 			change = true;
 		}
 		if (change) {
+			if (y > -1.0) {
+				y = -1.0;
+			}
 			mat4.identity(viewMatrix);
+			mat4.rotateX(viewMatrix, viewMatrix, rotx);
 			mat4.rotateY(viewMatrix, viewMatrix, roty);
 			mat4.translate(viewMatrix, viewMatrix, [x, y, z]);
 			gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
+			change = false;
 		}
 	}
 
@@ -334,7 +408,6 @@ function init() {
 	// drawing
 	//
 	function draw() {
-		gl.clearColor(0.7, 0.9, 1.0, 1.0);
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 		gl.drawElements(gl.TRIANGLES, indexData.length, gl.UNSIGNED_SHORT, 0);
 	}
@@ -348,6 +421,20 @@ function init() {
 		requestAnimationFrame(loop);
 	};
 	requestAnimationFrame(loop);
+
+	//
+	// settings events
+	//
+	document.getElementById('mouseLook').addEventListener('change', function(e) {
+		mouseLook = e.target.checked;
+		if (!mouseLook) {
+			rotx = 0;
+			change = true;
+		}
+	});
+	document.getElementById('timeBased').addEventListener('change', function(e) {
+		timeBased = e.target.checked;
+	});
 }
 
 // https://webglfundamentals.org/webgl/lessons/webgl-anti-patterns.html
