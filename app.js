@@ -1,77 +1,80 @@
-var vertexShaderCode = [
-'precision highp float;',
-'',
-'attribute vec3 coordinates;',
-'attribute vec3 color;',
-'',
-'varying vec3 fragColor;',
-'',
-'uniform mat4 mView;',
-'uniform mat4 mProj;',
-'',
-'void main(void) {',
-'	fragColor = color;',
-'	gl_Position = mProj * mView * vec4(coordinates, 1.0);',
-'}'
-].join('\n');
+function makeRequest(url) {
+  return new Promise(function (resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url);
+    xhr.onload = function () {
+      if (this.status >= 200 && this.status < 300) {
+        resolve(xhr.response);
+      } else {
+        reject({
+          status: this.status,
+          statusText: xhr.statusText
+        });
+      }
+    };
+    xhr.onerror = function () {
+      reject({
+        status: this.status,
+        statusText: xhr.statusText
+      });
+    };
+    xhr.send();
+  });
+}
 
-var fragmentShaderCode = [
-'precision highp float;',
-'',
-'varying vec3 fragColor;',
-'',
-'void main(void) {',
-'	gl_FragColor = vec4(fragColor, 1.0);',
-'}'
-].join('\n');
+let vertexShaderCode, fragmentShaderCode;
+let shaderPromises = ['vertexShader.glsl', 'fragmentShader.glsl'].map(shader => makeRequest(shader));
+let shadersLoaded = Promise.all(shaderPromises).then(shaderSources => {
+	[vertexShaderCode, fragmentShaderCode] = shaderSources;
+});
 
 function Block(x, y, z) {
 	this.customVertexData = this.vertexData.map((v, i) => {
 		return v +
-			(i % 6 == 0 ? x : 0) +
-			(i % 6 == 1 ? y : 0) +
-			(i % 6 == 2 ? z : 0);
+			(i % 5 == 0 ? x : 0) +
+			(i % 5 == 1 ? y : 0) +
+			(i % 5 == 2 ? z : 0);
 	});
 	this.vertexLength = 24;
 }
 
-Block.prototype.vertexData = 
-[ // X, Y, Z           R, G, B
+Block.prototype.vertexData = [
+	// X, Y, Z           U, V
 	// Top
-	-1.0, 1.0, -1.0,   0.5, 0.5, 0.5,
-	-1.0, 1.0, 1.0,    0.5, 0.5, 0.5,
-	1.0, 1.0, 1.0,     0.5, 0.5, 0.5,
-	1.0, 1.0, -1.0,    0.5, 0.5, 0.5,
+	-1.0, 1.0, -1.0,   0.0, 0.0,
+	-1.0, 1.0, 1.0,    0.0, 1.0,
+	1.0, 1.0, 1.0,     1.0, 1.0,
+	1.0, 1.0, -1.0,    1.0, 0.0,
 
 	// Left
-	-1.0, 1.0, 1.0,    0.75, 0.25, 0.5,
-	-1.0, -1.0, 1.0,   0.75, 0.25, 0.5,
-	-1.0, -1.0, -1.0,  0.75, 0.25, 0.5,
-	-1.0, 1.0, -1.0,   0.75, 0.25, 0.5,
+	-1.0, 1.0, 1.0,    0.0, 0.0,
+	-1.0, -1.0, 1.0,   1.0, 0.0,
+	-1.0, -1.0, -1.0,  1.0, 1.0,
+	-1.0, 1.0, -1.0,   0.0, 1.0,
 
 	// Right
-	1.0, 1.0, 1.0,     0.25, 0.25, 0.75,
-	1.0, -1.0, 1.0,    0.25, 0.25, 0.75,
-	1.0, -1.0, -1.0,   0.25, 0.25, 0.75,
-	1.0, 1.0, -1.0,    0.25, 0.25, 0.75,
+	1.0, 1.0, 1.0,     1.0, 1.0,
+	1.0, -1.0, 1.0,    0.0, 1.0,
+	1.0, -1.0, -1.0,   0.0, 0.0,
+	1.0, 1.0, -1.0,    1.0, 0.0,
 
 	// Front
-	1.0, 1.0, 1.0,     1.0, 0.0, 0.15,
-	1.0, -1.0, 1.0,    1.0, 0.0, 0.15,
-	-1.0, -1.0, 1.0,   1.0, 0.0, 0.15,
-	-1.0, 1.0, 1.0,    1.0, 0.0, 0.15,
+	1.0, 1.0, 1.0,     1.0, 1.0,
+	1.0, -1.0, 1.0,    1.0, 0.0,
+	-1.0, -1.0, 1.0,   0.0, 0.0,
+	-1.0, 1.0, 1.0,    0.0, 1.0,
 
 	// Back
-	1.0, 1.0, -1.0,    0.0, 1.0, 0.15,
-	1.0, -1.0, -1.0,   0.0, 1.0, 0.15,
-	-1.0, -1.0, -1.0,  0.0, 1.0, 0.15,
-	-1.0, 1.0, -1.0,   0.0, 1.0, 0.15,
+	1.0, 1.0, -1.0,    0.0, 0.0,
+	1.0, -1.0, -1.0,   0.0, 1.0,
+	-1.0, -1.0, -1.0,  1.0, 1.0,
+	-1.0, 1.0, -1.0,   1.0, 0.0,
 
 	// Bottom
-	-1.0, -1.0, -1.0,  0.5, 0.5, 1.0,
-	-1.0, -1.0, 1.0,   0.5, 0.5, 1.0,
-	1.0, -1.0, 1.0,    0.5, 0.5, 1.0,
-	1.0, -1.0, -1.0,   0.5, 0.5, 1.0,
+	-1.0, -1.0, -1.0,  1.0, 1.0,
+	-1.0, -1.0, 1.0,   1.0, 0.0,
+	1.0, -1.0, 1.0,    0.0, 0.0,
+	1.0, -1.0, -1.0,   0.0, 1.0,
 ];
 
 Block.prototype.indexData =
@@ -101,20 +104,20 @@ Block.prototype.indexData =
 	22, 20, 23
 ];
 
-function Plane(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) {
-	this.customVertexData = [
-		x1, y1, z1,    0.5, 0.25, 0.05,
-		x2, y2, z2,    0.5, 0.25, 0.05,
-		x3, y3, z3,    0.5, 0.25, 0.05,
-		x4, y4, z4,    0.5, 0.25, 0.05
-	];
-	this.vertexLength = 6;
-}
+// function Plane(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) {
+// 	this.customVertexData = [
+// 		x1, y1, z1,    0.5, 0.25, 0.05,
+// 		x2, y2, z2,    0.5, 0.25, 0.05,
+// 		x3, y3, z3,    0.5, 0.25, 0.05,
+// 		x4, y4, z4,    0.5, 0.25, 0.05
+// 	];
+// 	this.vertexLength = 4;
+// }
 
-Plane.prototype.indexData = [
-	0, 1, 2,
-	0, 2, 3
-];
+// Plane.prototype.indexData = [
+// 	0, 1, 2,
+// 	0, 2, 3
+// ];
 
 function init() {
 	let canvas = document.getElementById('glCanvas');
@@ -126,20 +129,20 @@ function init() {
 	}
 
 	// make all the meshes
-	let meshes = []; // [new Block(-3, -3, 0), new Block(3, 3, 0), new Block(-3, 3, 0), new Block(3, -3, 0), new Block(0, 0, 0)];
+	let meshes = [new Block(10, 0, 0)];
 	for (let i = 0; i < 1000; i++) {
 		let x = Math.floor(Math.random()*1000) - 500;
 		let y = -1.5;
 		let z = Math.floor(Math.random()*1000) - 500;
 		meshes.push(new Block(x, y, z));
 	}
-	let boundaries = 10000;
-	meshes.push(new Plane(
-		-boundaries, -2.55, -boundaries,
-		-boundaries, -2.55, boundaries,
-		 boundaries, -2.55, boundaries,
-		 boundaries, -2.55, -boundaries,
-	));
+	// let boundaries = 10000;
+	// meshes.push(new Plane(
+	// 	-boundaries, -2.55, -boundaries,
+	// 	-boundaries, -2.55, boundaries,
+	// 	 boundaries, -2.55, boundaries,
+	// 	 boundaries, -2.55, -boundaries,
+	// ));
 
 	let vertexData = Array.prototype.concat.apply([], meshes.map(p => p.customVertexData));
 	let offset = 0;
@@ -164,7 +167,7 @@ function init() {
 	gl.shaderSource(vertexShader, vertexShaderCode);
 	gl.compileShader(vertexShader);
 	if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-		console.error('Failed to compile vertex shader');
+		console.error('Failed to compile vertex shader', gl.getShaderInfoLog(vertexShader));
 		return;
 	}
 
@@ -172,7 +175,7 @@ function init() {
 	gl.shaderSource(fragmentShader, fragmentShaderCode);
 	gl.compileShader(fragmentShader);
 	if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-		console.error('Failed to compile fragment shader');
+		console.error('Failed to compile fragment shader', gl.getShaderInfoLog(fragmentShader));
 		return;
 	}
 
@@ -202,22 +205,35 @@ function init() {
 		3,
 		gl.FLOAT,
 		gl.FALSE,
-		6*Float32Array.BYTES_PER_ELEMENT,
+		5*Float32Array.BYTES_PER_ELEMENT,
 		0*Float32Array.BYTES_PER_ELEMENT
 	);
 
-	let attributeColor = gl.getAttribLocation(shaderProgram, 'color');
+	let attributeTexturePoint = gl.getAttribLocation(shaderProgram, 'texturePoint');
 	gl.vertexAttribPointer(
-		attributeColor,
-		3,
+		attributeTexturePoint,
+		2,
 		gl.FLOAT,
 		gl.FALSE,
-		6*Float32Array.BYTES_PER_ELEMENT,
+		5*Float32Array.BYTES_PER_ELEMENT,
 		3*Float32Array.BYTES_PER_ELEMENT
 	);
 
 	gl.enableVertexAttribArray(attributeCoord);
-	gl.enableVertexAttribArray(attributeColor);
+	gl.enableVertexAttribArray(attributeTexturePoint);
+
+	let boxTexture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, boxTexture);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texImage2D(
+		gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		document.getElementById('box-image')
+	);
+	gl.bindTexture(gl.TEXTURE_2D, null);
 
 	gl.clearColor(0.7, 0.9, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
@@ -409,6 +425,8 @@ function init() {
 	//
 	function draw() {
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+		gl.bindTexture(gl.TEXTURE_2D, boxTexture);
+		gl.activeTexture(gl.TEXTURE0);
 		gl.drawElements(gl.TRIANGLES, indexData.length, gl.UNSIGNED_SHORT, 0);
 	}
 

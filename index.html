@@ -21,10 +21,10 @@
 		}	
 	</style>
 	<script type="text/javascript" src="gl-matrix.js"></script>
-	<script type="text/javascript" src="app.js"></script>
+	<script id="app-code" type="text/javascript" src="app.js"></script>
 </head>
 
-<body onload="init()">
+<body onload="shadersLoaded.then(() => init())">
 
 	<canvas id="glCanvas">
 	</canvas>
@@ -44,6 +44,7 @@
 		</input></div>
 	</div>
 
+	<img id="box-image" src="box.jpg" width="0" height="0"/>
 </body>
 
 </html>
