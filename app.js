@@ -28,53 +28,58 @@ let shadersLoaded = Promise.all(shaderPromises).then(shaderSources => {
 	[vertexShaderCode, fragmentShaderCode] = shaderSources;
 });
 
+shadersLoaded.catch(err => {
+	console.log('failed to load shaders', err);
+});
+
 function Block(x, y, z) {
+	this.vertexComponents = 8;
 	this.customVertexData = this.vertexData.map((v, i) => {
 		return v +
-			(i % 5 == 0 ? x : 0) +
-			(i % 5 == 1 ? y : 0) +
-			(i % 5 == 2 ? z : 0);
+			(i % this.vertexComponents == 0 ? x : 0) +
+			(i % this.vertexComponents == 1 ? y : 0) +
+			(i % this.vertexComponents == 2 ? z : 0);
 	});
 	this.vertexLength = 24;
 }
 
 Block.prototype.vertexData = [
-	// X, Y, Z           U, V
+	// X, Y, Z         NORMAL           U, V
 	// Top
-	-1.0, 1.0, -1.0,   0.0, 0.0,
-	-1.0, 1.0, 1.0,    0.0, 1.0,
-	1.0, 1.0, 1.0,     1.0, 1.0,
-	1.0, 1.0, -1.0,    1.0, 0.0,
+	-1.0, 1.0, -1.0,   0.0, 1.0, 0.0,   0.0, 0.0,
+	-1.0, 1.0, 1.0,    0.0, 1.0, 0.0,   0.0, 1.0,
+	1.0, 1.0, 1.0,     0.0, 1.0, 0.0,   1.0, 1.0,
+	1.0, 1.0, -1.0,    0.0, 1.0, 0.0,   1.0, 0.0,
 
 	// Left
-	-1.0, 1.0, 1.0,    0.0, 0.0,
-	-1.0, -1.0, 1.0,   1.0, 0.0,
-	-1.0, -1.0, -1.0,  1.0, 1.0,
-	-1.0, 1.0, -1.0,   0.0, 1.0,
+	-1.0, 1.0, 1.0,    -1.0, 0.0, 0.0,  0.0, 0.0,
+	-1.0, -1.0, 1.0,   -1.0, 0.0, 0.0,  1.0, 0.0,
+	-1.0, -1.0, -1.0,  -1.0, 0.0, 0.0,  1.0, 1.0,
+	-1.0, 1.0, -1.0,   -1.0, 0.0, 0.0,  0.0, 1.0,
 
 	// Right
-	1.0, 1.0, 1.0,     1.0, 1.0,
-	1.0, -1.0, 1.0,    0.0, 1.0,
-	1.0, -1.0, -1.0,   0.0, 0.0,
-	1.0, 1.0, -1.0,    1.0, 0.0,
+	1.0, 1.0, 1.0,     1.0, 0.0, 0.0,    1.0, 1.0,
+	1.0, -1.0, 1.0,    1.0, 0.0, 0.0,    0.0, 1.0,
+	1.0, -1.0, -1.0,   1.0, 0.0, 0.0,    0.0, 0.0,
+	1.0, 1.0, -1.0,    1.0, 0.0, 0.0,    1.0, 0.0,
 
 	// Front
-	1.0, 1.0, 1.0,     1.0, 1.0,
-	1.0, -1.0, 1.0,    1.0, 0.0,
-	-1.0, -1.0, 1.0,   0.0, 0.0,
-	-1.0, 1.0, 1.0,    0.0, 1.0,
+	1.0, 1.0, 1.0,     0.0, 0.0, 1.0,    1.0, 1.0,
+	1.0, -1.0, 1.0,    0.0, 0.0, 1.0,    1.0, 0.0,
+	-1.0, -1.0, 1.0,   0.0, 0.0, 1.0,    0.0, 0.0,
+	-1.0, 1.0, 1.0,    0.0, 0.0, 1.0,    0.0, 1.0,
 
 	// Back
-	1.0, 1.0, -1.0,    0.0, 0.0,
-	1.0, -1.0, -1.0,   0.0, 1.0,
-	-1.0, -1.0, -1.0,  1.0, 1.0,
-	-1.0, 1.0, -1.0,   1.0, 0.0,
+	1.0, 1.0, -1.0,    0.0, 0.0, -1.0,   0.0, 0.0,
+	1.0, -1.0, -1.0,   0.0, 0.0, -1.0,   0.0, 1.0,
+	-1.0, -1.0, -1.0,  0.0, 0.0, -1.0,   1.0, 1.0,
+	-1.0, 1.0, -1.0,   0.0, 0.0, -1.0,   1.0, 0.0,
 
 	// Bottom
-	-1.0, -1.0, -1.0,  1.0, 1.0,
-	-1.0, -1.0, 1.0,   1.0, 0.0,
-	1.0, -1.0, 1.0,    0.0, 0.0,
-	1.0, -1.0, -1.0,   0.0, 1.0,
+	-1.0, -1.0, -1.0,  0.0, -1.0, 0.0,   1.0, 1.0,
+	-1.0, -1.0, 1.0,   0.0, -1.0, 0.0,   1.0, 0.0,
+	1.0, -1.0, 1.0,    0.0, -1.0, 0.0,   0.0, 0.0,
+	1.0, -1.0, -1.0,   0.0, -1.0, 0.0,   0.0, 1.0,
 ];
 
 Block.prototype.indexData =
@@ -129,7 +134,7 @@ function init() {
 	}
 
 	// make all the meshes
-	let meshes = [new Block(10, 0, 0)];
+	let meshes = [new Block(0, 0, 10)];
 	for (let i = 0; i < 1000; i++) {
 		let x = Math.floor(Math.random()*1000) - 500;
 		let y = -1.5;
@@ -199,28 +204,39 @@ function init() {
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
-	let attributeCoord = gl.getAttribLocation(shaderProgram, 'coordinates');
+	let attribVertCoord = gl.getAttribLocation(shaderProgram, 'vertCoord');
 	gl.vertexAttribPointer(
-		attributeCoord,
+		attribVertCoord,
 		3,
 		gl.FLOAT,
 		gl.FALSE,
-		5*Float32Array.BYTES_PER_ELEMENT,
+		8*Float32Array.BYTES_PER_ELEMENT,
 		0*Float32Array.BYTES_PER_ELEMENT
 	);
 
-	let attributeTexturePoint = gl.getAttribLocation(shaderProgram, 'texturePoint');
+	let attribVertNormal = 1; // gl.getAttribLocation(shaderProgram, 'normal');
 	gl.vertexAttribPointer(
-		attributeTexturePoint,
-		2,
+		attribVertNormal,
+		3,
 		gl.FLOAT,
 		gl.FALSE,
-		5*Float32Array.BYTES_PER_ELEMENT,
+		8*Float32Array.BYTES_PER_ELEMENT,
 		3*Float32Array.BYTES_PER_ELEMENT
 	);
 
-	gl.enableVertexAttribArray(attributeCoord);
-	gl.enableVertexAttribArray(attributeTexturePoint);
+	let attribTexturePoint = gl.getAttribLocation(shaderProgram, 'texturePoint');
+	gl.vertexAttribPointer(
+		attribTexturePoint,
+		2,
+		gl.FLOAT,
+		gl.FALSE,
+		8*Float32Array.BYTES_PER_ELEMENT,
+		6*Float32Array.BYTES_PER_ELEMENT
+	);
+
+	gl.enableVertexAttribArray(attribVertCoord);
+	gl.enableVertexAttribArray(attribVertNormal);
+	gl.enableVertexAttribArray(attribTexturePoint);
 
 	let boxTexture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, boxTexture);
