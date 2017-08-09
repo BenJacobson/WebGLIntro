@@ -13,7 +13,7 @@ uniform mat4 mProj;
 
 void main(void) {
 	fragTexturePoint = texturePoint;
-	fragCoord = (mView * vec4(vertCoord, 1.0)).xyz;
-	fragNormal = (mView * vec4(normal, 0.0)).xyz;
+	fragCoord = vertCoord;
+	fragNormal = normal;
 	gl_Position = mProj * mView * vec4(vertCoord, 1.0);
 }
