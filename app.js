@@ -257,6 +257,7 @@ function init() {
 
 	let matViewUniformLocation = gl.getUniformLocation(shaderProgram, 'mView');
 	let matProjUniformLocation = gl.getUniformLocation(shaderProgram, 'mProj');
+	let sunRotUniformLocation = gl.getUniformLocation(shaderProgram, 'sunRot');
 
 	let viewMatrix = new Float32Array(16);
 	let projMatrix = new Float32Array(16);
@@ -265,6 +266,7 @@ function init() {
 
 	gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
 	gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
+	gl.uniform1f(sunRotUniformLocation, 1.0);
 
 	//
 	// resize handler
@@ -443,6 +445,9 @@ function init() {
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 		gl.bindTexture(gl.TEXTURE_2D, boxTexture);
 		gl.activeTexture(gl.TEXTURE0);
+		let sunRot = (performance.now()/1000) % TAU;
+		// console.log(sunRot);
+		gl.uniform1f(sunRotUniformLocation, sunRot);
 		gl.drawElements(gl.TRIANGLES, indexData.length, gl.UNSIGNED_SHORT, 0);
 	}
 
