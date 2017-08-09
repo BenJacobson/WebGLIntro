@@ -134,13 +134,13 @@ function init() {
 	}
 
 	// make all the meshes
-	let meshes = [new Block(0, 0, 10)];
-	for (let i = 0; i < 1000; i++) {
-		let x = Math.floor(Math.random()*1000) - 500;
-		let y = -1.5;
-		let z = Math.floor(Math.random()*1000) - 500;
-		meshes.push(new Block(x, y, z));
-	}
+	let meshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
+	// for (let i = 0; i < 1000; i++) {
+	// 	let x = Math.floor(Math.random()*1000) - 500;
+	// 	let y = -1.5;
+	// 	let z = Math.floor(Math.random()*1000) - 500;
+	// 	meshes.push(new Block(x, y, z));
+	// }
 	// let boundaries = 10000;
 	// meshes.push(new Plane(
 	// 	-boundaries, -2.55, -boundaries,

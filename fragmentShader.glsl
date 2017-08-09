@@ -1,14 +1,17 @@
 precision highp float;
 
 varying vec3 fragNormal;
+varying vec3 fragCoord;
 varying vec2 fragTexturePoint;
 
 uniform mat4 mView;
 uniform sampler2D sampler;
 
 void main(void) {
-	vec3 ambientLightIntensity = vec3(0.1, 0.1, 0.1);
-	vec3 sunNormal = normalize((mView * vec4(1.0, 1.0, 1.0, 0.0)).xyz);
+	vec3 ambientLightIntensity = vec3(0, 0, 0); // vec3(0.4, 0.4, 0.4);
+	// vec3 sunNormal = normalize((mView * vec4(1.0, 1.0, 1.0, 0.0)).xyz);
+	vec3 sunPoint = (mView * vec4(0, 0, 0, 0)).xyz;
+	vec3 sunNormal = normalize(fragCoord - sunPoint);
 	vec3 sunColor = vec3(1.0, 1.0, 1.0);
 	vec3 lightIntensity = ambientLightIntensity +
 		sunColor * max(dot(fragNormal, sunNormal), 0.0);
