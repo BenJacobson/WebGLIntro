@@ -23,7 +23,7 @@ function makeRequest(url) {
 }
 
 let vertexShaderCode, fragmentShaderCode;
-let shaderPromises = ['vertexShader.glsl', 'fragmentShader.glsl'].map(shader => makeRequest(shader));
+let shaderPromises = ['vertexShader.glsl', 'fragmentShader.glsl'].map(shader => makeRequest('shader/'+shader));
 let shadersLoaded = Promise.all(shaderPromises).then(shaderSources => {
 	[vertexShaderCode, fragmentShaderCode] = shaderSources;
 });
@@ -31,83 +31,6 @@ let shadersLoaded = Promise.all(shaderPromises).then(shaderSources => {
 shadersLoaded.catch(err => {
 	console.log('failed to load shaders', err);
 });
-
-function Block(x, y, z) {
-	this.vertexComponents = 8;
-	this.customVertexData = this.vertexData.map((v, i) => {
-		return v +
-			(i % this.vertexComponents == 0 ? x : 0) +
-			(i % this.vertexComponents == 1 ? y : 0) +
-			(i % this.vertexComponents == 2 ? z : 0);
-	});
-	this.vertexLength = 24;
-}
-
-Block.prototype.vertexData = [
-	// X, Y, Z         NORMAL           U, V
-	// Top
-	-1.0, 1.0, -1.0,   0.0, 1.0, 0.0,   0.0, 0.0,
-	-1.0, 1.0, 1.0,    0.0, 1.0, 0.0,   0.0, 1.0,
-	1.0, 1.0, 1.0,     0.0, 1.0, 0.0,   1.0, 1.0,
-	1.0, 1.0, -1.0,    0.0, 1.0, 0.0,   1.0, 0.0,
-
-	// Left
-	-1.0, 1.0, 1.0,    -1.0, 0.0, 0.0,  0.0, 0.0,
-	-1.0, -1.0, 1.0,   -1.0, 0.0, 0.0,  1.0, 0.0,
-	-1.0, -1.0, -1.0,  -1.0, 0.0, 0.0,  1.0, 1.0,
-	-1.0, 1.0, -1.0,   -1.0, 0.0, 0.0,  0.0, 1.0,
-
-	// Right
-	1.0, 1.0, 1.0,     1.0, 0.0, 0.0,    1.0, 1.0,
-	1.0, -1.0, 1.0,    1.0, 0.0, 0.0,    0.0, 1.0,
-	1.0, -1.0, -1.0,   1.0, 0.0, 0.0,    0.0, 0.0,
-	1.0, 1.0, -1.0,    1.0, 0.0, 0.0,    1.0, 0.0,
-
-	// Front
-	1.0, 1.0, 1.0,     0.0, 0.0, 1.0,    1.0, 1.0,
-	1.0, -1.0, 1.0,    0.0, 0.0, 1.0,    1.0, 0.0,
-	-1.0, -1.0, 1.0,   0.0, 0.0, 1.0,    0.0, 0.0,
-	-1.0, 1.0, 1.0,    0.0, 0.0, 1.0,    0.0, 1.0,
-
-	// Back
-	1.0, 1.0, -1.0,    0.0, 0.0, -1.0,   0.0, 0.0,
-	1.0, -1.0, -1.0,   0.0, 0.0, -1.0,   0.0, 1.0,
-	-1.0, -1.0, -1.0,  0.0, 0.0, -1.0,   1.0, 1.0,
-	-1.0, 1.0, -1.0,   0.0, 0.0, -1.0,   1.0, 0.0,
-
-	// Bottom
-	-1.0, -1.0, -1.0,  0.0, -1.0, 0.0,   1.0, 1.0,
-	-1.0, -1.0, 1.0,   0.0, -1.0, 0.0,   1.0, 0.0,
-	1.0, -1.0, 1.0,    0.0, -1.0, 0.0,   0.0, 0.0,
-	1.0, -1.0, -1.0,   0.0, -1.0, 0.0,   0.0, 1.0,
-];
-
-Block.prototype.indexData =
-[
-	// Top
-	0, 1, 2,
-	0, 2, 3,
-
-	// Left
-	5, 4, 6,
-	6, 4, 7,
-
-	// Right
-	8, 9, 10,
-	8, 10, 11,
-
-	// Front
-	13, 12, 14,
-	15, 14, 12,
-
-	// Back
-	16, 17, 18,
-	16, 18, 19,
-
-	// Bottom
-	21, 20, 22,
-	22, 20, 23
-];
 
 // function Plane(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) {
 // 	this.customVertexData = [
@@ -135,12 +58,12 @@ function init() {
 
 	// make all the meshes
 	let meshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
-	// for (let i = 0; i < 1000; i++) {
-	// 	let x = Math.floor(Math.random()*1000) - 500;
-	// 	let y = -1.5;
-	// 	let z = Math.floor(Math.random()*1000) - 500;
-	// 	meshes.push(new Block(x, y, z));
-	// }
+	for (let i = 0; i < 1000; i++) {
+		let x = Math.floor(Math.random()*1000) - 500;
+		let y = -1.5;
+		let z = Math.floor(Math.random()*1000) - 500;
+		meshes.push(new Block(x, y, z));
+	}
 	// let boundaries = 10000;
 	// meshes.push(new Plane(
 	// 	-boundaries, -2.55, -boundaries,
@@ -149,24 +72,27 @@ function init() {
 	// 	 boundaries, -2.55, -boundaries,
 	// ));
 
-	let vertexData = Array.prototype.concat.apply([], meshes.map(p => p.customVertexData));
-	let offset = 0;
-	let indexData = Array.prototype.concat.apply([], meshes.map((p, m) => {
-		let ret = p.indexData.map(i => i + offset);
-		offset += p.vertexLength;
-		return ret;
-	}));
+	function MeshSet(meshObjects) {
+		this.vertexData = Array.prototype.concat.apply([], meshes.map(p => p.customVertexData));
+		let offset = 0;
+		this.indexData = Array.prototype.concat.apply([], meshes.map(p => {
+			let ret = p.indexData.map(i => i + offset);
+			offset += p.vertexLength;
+			return ret;
+		}));
 
 
-	let vertexBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexData), gl.STATIC_DRAW);
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		this.vertexBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertexData), gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-	let indexBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexData), gl.STATIC_DRAW);
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+		this.indexBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indexData), gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+	}
+	let blockMeshes = new MeshSet(meshes);
 
 	let vertexShader = gl.createShader(gl.VERTEX_SHADER);
 	gl.shaderSource(vertexShader, vertexShaderCode);
@@ -190,19 +116,19 @@ function init() {
 
 	gl.linkProgram(shaderProgram);
 	if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-		console.error('Failed to link program');
+		console.error('Failed to link program', gl.getProgramInfoLog(shaderProgram));
 		return;
 	}
 
 	gl.validateProgram(shaderProgram);
 	if (!gl.getProgramParameter(shaderProgram, gl.VALIDATE_STATUS)) {
-		console.error('Failed to validate program');
+		console.error('Failed to validate program', gl.getProgramInfoLog(shaderProgram));
 		return;
 	}
 
 	gl.useProgram(shaderProgram);
-	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+	gl.bindBuffer(gl.ARRAY_BUFFER, blockMeshes.vertexBuffer);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, blockMeshes.indexBuffer);
 
 	let attribVertCoord = gl.getAttribLocation(shaderProgram, 'vertCoord');
 	gl.vertexAttribPointer(
@@ -214,7 +140,7 @@ function init() {
 		0*Float32Array.BYTES_PER_ELEMENT
 	);
 
-	let attribVertNormal = 1; // gl.getAttribLocation(shaderProgram, 'normal');
+	let attribVertNormal = gl.getAttribLocation(shaderProgram, 'normal');
 	gl.vertexAttribPointer(
 		attribVertNormal,
 		3,
@@ -247,17 +173,17 @@ function init() {
 	gl.texImage2D(
 		gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
 		gl.UNSIGNED_BYTE,
-		document.getElementById('box-image')
+		document.getElementById('block-texture')
 	);
 	gl.bindTexture(gl.TEXTURE_2D, null);
 
-	gl.clearColor(0.7, 0.9, 1.0, 1.0);
+	gl.clearColor(0.0, 0.0, 0.0, 1.0); // gl.clearColor(0.7, 0.9, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 
 	let matViewUniformLocation = gl.getUniformLocation(shaderProgram, 'mView');
 	let matProjUniformLocation = gl.getUniformLocation(shaderProgram, 'mProj');
-	let sunRotUniformLocation = gl.getUniformLocation(shaderProgram, 'sunRot');
+	let lightPointUniformLocation = gl.getUniformLocation(shaderProgram, 'lightPoint');
 
 	let viewMatrix = new Float32Array(16);
 	let projMatrix = new Float32Array(16);
@@ -266,7 +192,6 @@ function init() {
 
 	gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
 	gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
-	gl.uniform1f(sunRotUniformLocation, 1.0);
 
 	//
 	// resize handler
@@ -426,9 +351,9 @@ function init() {
 			change = true;
 		}
 		if (change) {
-			if (y > -1.0) {
-				y = -1.0;
-			}
+			// if (y > -1.0) {
+			// 	y = -1.0;
+			// }
 			mat4.identity(viewMatrix);
 			mat4.rotateX(viewMatrix, viewMatrix, rotx);
 			mat4.rotateY(viewMatrix, viewMatrix, roty);
@@ -446,9 +371,10 @@ function init() {
 		gl.bindTexture(gl.TEXTURE_2D, boxTexture);
 		gl.activeTexture(gl.TEXTURE0);
 		let sunRot = (performance.now()/1000) % TAU;
-		// console.log(sunRot);
-		gl.uniform1f(sunRotUniformLocation, sunRot);
-		gl.drawElements(gl.TRIANGLES, indexData.length, gl.UNSIGNED_SHORT, 0);
+		let sunPoint = [Math.sin(sunRot)*15.0, Math.cos(sunRot)*15.0, 0];
+		gl.uniform3f(lightPointUniformLocation, ...sunPoint);
+		gl.drawElements(gl.TRIANGLES, blockMeshes.indexData.length, gl.UNSIGNED_SHORT, 0);
+
 	}
 
 	//
@@ -458,7 +384,7 @@ function init() {
 		move();
 		draw();
 		requestAnimationFrame(loop);
-	};
+	}
 	requestAnimationFrame(loop);
 
 	//

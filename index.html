@@ -20,11 +20,16 @@
 		    display: block;
 		}	
 	</style>
+
+	<!-- Sources -->
+	<script type="text/javascript" src="mesh/block/block.js"></script>
 	<script type="text/javascript" src="gl-matrix.js"></script>
-	<script id="app-code" type="text/javascript" src="app.js"></script>
+	<script type="text/javascript" src="app.js"></script>
+	<!-- Textures -->
+	<img id="block-texture" src="mesh/block/box.jpg" width="0" height="0"/>
 </head>
 
-<body onload="shadersLoaded.then(() => init())">
+<body onload="shadersLoaded.then(init)">
 
 	<canvas id="glCanvas">
 	</canvas>
@@ -44,7 +49,6 @@
 		</input></div>
 	</div>
 
-	<img id="box-image" src="box.jpg" width="0" height="0"/>
 </body>
 
 </html>
