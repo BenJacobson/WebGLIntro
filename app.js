@@ -72,118 +72,25 @@ function init() {
 	// 	 boundaries, -2.55, -boundaries,
 	// ));
 
-	function MeshSet(meshObjects) {
-		this.vertexData = Array.prototype.concat.apply([], meshes.map(p => p.customVertexData));
-		let offset = 0;
-		this.indexData = Array.prototype.concat.apply([], meshes.map(p => {
-			let ret = p.indexData.map(i => i + offset);
-			offset += p.vertexLength;
-			return ret;
-		}));
+	let blockMeshes = new MeshSet(gl, meshes);
 
+	let programInfo = new ProgramInfo(gl, vertexShaderCode, fragmentShaderCode,
+		[
+			new GLSLAttribute('vertCoord', 3, 8, 0),
+			new GLSLAttribute('normal', 3, 8, 3),
+			new GLSLAttribute('texturePoint', 2, 8, 6),
+		],
+		[
+			'box-texture'
+		]);
 
-		this.vertexBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertexData), gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-		this.indexBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indexData), gl.STATIC_DRAW);
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-	}
-	let blockMeshes = new MeshSet(meshes);
-
-	let vertexShader = gl.createShader(gl.VERTEX_SHADER);
-	gl.shaderSource(vertexShader, vertexShaderCode);
-	gl.compileShader(vertexShader);
-	if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-		console.error('Failed to compile vertex shader', gl.getShaderInfoLog(vertexShader));
-		return;
-	}
-
-	let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-	gl.shaderSource(fragmentShader, fragmentShaderCode);
-	gl.compileShader(fragmentShader);
-	if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-		console.error('Failed to compile fragment shader', gl.getShaderInfoLog(fragmentShader));
-		return;
-	}
-
-	let shaderProgram = gl.createProgram();
-	gl.attachShader(shaderProgram, vertexShader);
-	gl.attachShader(shaderProgram, fragmentShader);
-
-	gl.linkProgram(shaderProgram);
-	if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-		console.error('Failed to link program', gl.getProgramInfoLog(shaderProgram));
-		return;
-	}
-
-	gl.validateProgram(shaderProgram);
-	if (!gl.getProgramParameter(shaderProgram, gl.VALIDATE_STATUS)) {
-		console.error('Failed to validate program', gl.getProgramInfoLog(shaderProgram));
-		return;
-	}
-
-	gl.useProgram(shaderProgram);
-	gl.bindBuffer(gl.ARRAY_BUFFER, blockMeshes.vertexBuffer);
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, blockMeshes.indexBuffer);
-
-	let attribVertCoord = gl.getAttribLocation(shaderProgram, 'vertCoord');
-	gl.vertexAttribPointer(
-		attribVertCoord,
-		3,
-		gl.FLOAT,
-		gl.FALSE,
-		8*Float32Array.BYTES_PER_ELEMENT,
-		0*Float32Array.BYTES_PER_ELEMENT
-	);
-
-	let attribVertNormal = gl.getAttribLocation(shaderProgram, 'normal');
-	gl.vertexAttribPointer(
-		attribVertNormal,
-		3,
-		gl.FLOAT,
-		gl.FALSE,
-		8*Float32Array.BYTES_PER_ELEMENT,
-		3*Float32Array.BYTES_PER_ELEMENT
-	);
-
-	let attribTexturePoint = gl.getAttribLocation(shaderProgram, 'texturePoint');
-	gl.vertexAttribPointer(
-		attribTexturePoint,
-		2,
-		gl.FLOAT,
-		gl.FALSE,
-		8*Float32Array.BYTES_PER_ELEMENT,
-		6*Float32Array.BYTES_PER_ELEMENT
-	);
-
-	gl.enableVertexAttribArray(attribVertCoord);
-	gl.enableVertexAttribArray(attribVertNormal);
-	gl.enableVertexAttribArray(attribTexturePoint);
-
-	let boxTexture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, boxTexture);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	gl.texImage2D(
-		gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
-		gl.UNSIGNED_BYTE,
-		document.getElementById('block-texture')
-	);
-	gl.bindTexture(gl.TEXTURE_2D, null);
-
-	gl.clearColor(0.0, 0.0, 0.0, 1.0); // gl.clearColor(0.7, 0.9, 1.0, 1.0);
+	gl.clearColor(0.7, 0.9, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 
-	let matViewUniformLocation = gl.getUniformLocation(shaderProgram, 'mView');
-	let matProjUniformLocation = gl.getUniformLocation(shaderProgram, 'mProj');
-	let lightPointUniformLocation = gl.getUniformLocation(shaderProgram, 'lightPoint');
+	let matViewUniformLocation = gl.getUniformLocation(programInfo.program, 'mView');
+	let matProjUniformLocation = gl.getUniformLocation(programInfo.program, 'mProj');
+	let lightPointUniformLocation = gl.getUniformLocation(programInfo.program, 'lightPoint');
 
 	let viewMatrix = new Float32Array(16);
 	let projMatrix = new Float32Array(16);
@@ -368,8 +275,8 @@ function init() {
 	//
 	function draw() {
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-		gl.bindTexture(gl.TEXTURE_2D, boxTexture);
-		gl.activeTexture(gl.TEXTURE0);
+		// gl.bindTexture(gl.TEXTURE_2D, boxTexture);
+		// gl.activeTexture(gl.TEXTURE0);
 		let sunRot = (performance.now()/1000) % TAU;
 		let sunPoint = [Math.sin(sunRot)*15.0, Math.cos(sunRot)*15.0, 0];
 		gl.uniform3f(lightPointUniformLocation, ...sunPoint);
