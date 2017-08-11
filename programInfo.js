@@ -50,7 +50,7 @@ function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource, attrib
 		this.gl.enableVertexAttribArray(attributeLocation);
 	});
 
-	textureIds.forEach(textureId => {
+	this.textures = textureIds.map(textureId => {
 		let texture = this.gl.createTexture();
 		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
 		this.gl.texImage2D(
@@ -63,5 +63,6 @@ function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource, attrib
 		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
 		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
 		this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+		return texture;
 	});
 }

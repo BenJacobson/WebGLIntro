@@ -81,10 +81,10 @@ function init() {
 			new GLSLAttribute('texturePoint', 2, 8, 6),
 		],
 		[
-			'box-texture'
+			'block-texture'
 		]);
 
-	gl.clearColor(0.7, 0.9, 1.0, 1.0);
+	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 
@@ -275,8 +275,10 @@ function init() {
 	//
 	function draw() {
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-		// gl.bindTexture(gl.TEXTURE_2D, boxTexture);
-		// gl.activeTexture(gl.TEXTURE0);
+		programInfo.textures.forEach((texture, i) => {
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+			gl.activeTexture(gl.TEXTURE0 + i);
+		});
 		let sunRot = (performance.now()/1000) % TAU;
 		let sunPoint = [Math.sin(sunRot)*15.0, Math.cos(sunRot)*15.0, 0];
 		gl.uniform3f(lightPointUniformLocation, ...sunPoint);
