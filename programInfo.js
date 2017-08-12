@@ -3,6 +3,7 @@ function GLSLAttribute(name, size, stride, offset) {
 	this.size = size;
 	this.stride = stride;
 	this.offset = offset;
+	this.location = undefined;
 }
 
 function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource, attributes, textureIds) {
@@ -35,19 +36,9 @@ function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource, attrib
 		console.error('Failed to validate program', this.gl.getProgramInfoLog(this.program));
 	}
 
-	this.gl.useProgram(this.program);
-
-	attributes.forEach(attribute => {
-		let attributeLocation = this.gl.getAttribLocation(this.program, attribute.name);
-		this.gl.vertexAttribPointer(
-			attributeLocation,
-			attribute.size,
-			this.gl.FLOAT,
-			this.gl.FALSE,
-			attribute.stride*Float32Array.BYTES_PER_ELEMENT,
-			attribute.offset*Float32Array.BYTES_PER_ELEMENT
-		);
-		this.gl.enableVertexAttribArray(attributeLocation);
+	this.attributes = attributes;
+	this.attributes.forEach(attribute => {
+		attribute.location = this.gl.getAttribLocation(this.program, attribute.name);
 	});
 
 	this.textures = textureIds.map(textureId => {
@@ -64,5 +55,23 @@ function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource, attrib
 		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
 		this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 		return texture;
+	});
+}
+
+ProgramInfo.prototype.use = function() {
+	this.gl.useProgram(this.program);
+}
+
+ProgramInfo.prototype.enableAttributes = function() {
+	this.attributes.forEach(attribute => {
+		this.gl.vertexAttribPointer(
+			attribute.location,
+			attribute.size,
+			this.gl.FLOAT,
+			this.gl.FALSE,
+			attribute.stride*Float32Array.BYTES_PER_ELEMENT,
+			attribute.offset*Float32Array.BYTES_PER_ELEMENT
+		);
+		this.gl.enableVertexAttribArray(attribute.location);
 	});
 }

@@ -57,13 +57,6 @@ function init() {
 	}
 
 	// make all the meshes
-	let meshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
-	for (let i = 0; i < 1000; i++) {
-		let x = Math.floor(Math.random()*1000) - 500;
-		let y = -1.5;
-		let z = Math.floor(Math.random()*1000) - 500;
-		meshes.push(new Block(x, y, z));
-	}
 	// let boundaries = 10000;
 	// meshes.push(new Plane(
 	// 	-boundaries, -2.55, -boundaries,
@@ -72,7 +65,17 @@ function init() {
 	// 	 boundaries, -2.55, -boundaries,
 	// ));
 
-	let blockMeshes = new MeshSet(gl, meshes);
+	let blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
+	for (let i = 0; i < 1000; i++) {
+		let x = Math.floor(Math.random()*1000) - 500;
+		let y = -2.55;
+		let z = Math.floor(Math.random()*1000) - 500;
+		blockMeshes.push(new Block(x, y, z));
+	}
+	let blockMeshSet = new MeshSet(gl, blockMeshes);
+
+	let lightMeshes = [new Block(0, 0, 0)];
+	let lightMeshSet = new MeshSet(gl, lightMeshes);
 
 	let programInfo = new ProgramInfo(gl, vertexShaderCode, fragmentShaderCode,
 		[
@@ -82,7 +85,12 @@ function init() {
 		],
 		[
 			'block-texture'
-		]);
+		]
+	);
+
+	blockMeshSet.bind();
+	programInfo.enableAttributes();
+	blockMeshSet.unbind();
 
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
@@ -97,6 +105,7 @@ function init() {
 	mat4.identity(viewMatrix);
 	mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.clientWidth / canvas.clientHeight, 1.0, 5000.0);
 
+	programInfo.use();
 	gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
 	gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
 
@@ -275,6 +284,7 @@ function init() {
 	//
 	function draw() {
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+		programInfo.use();
 		programInfo.textures.forEach((texture, i) => {
 			gl.bindTexture(gl.TEXTURE_2D, texture);
 			gl.activeTexture(gl.TEXTURE0 + i);
@@ -282,8 +292,10 @@ function init() {
 		let sunRot = (performance.now()/1000) % TAU;
 		let sunPoint = [Math.sin(sunRot)*15.0, Math.cos(sunRot)*15.0, 0];
 		gl.uniform3f(lightPointUniformLocation, ...sunPoint);
-		gl.drawElements(gl.TRIANGLES, blockMeshes.indexData.length, gl.UNSIGNED_SHORT, 0);
-
+		programInfo.use();
+		blockMeshSet.bind();
+		blockMeshSet.draw();
+		blockMeshSet.unbind();
 	}
 
 	//
