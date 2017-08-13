@@ -1,12 +1,12 @@
 function Block(x, y, z) {
 	this.vertexComponents = 8;
+	this.vertexLength = 24;
 	this.customVertexData = this.vertexData.map((v, i) => {
 		return v +
 			(i % this.vertexComponents == 0 ? x : 0) +
 			(i % this.vertexComponents == 1 ? y : 0) +
 			(i % this.vertexComponents == 2 ? z : 0);
 	});
-	this.vertexLength = 24;
 }
 
 Block.prototype.vertexData = [

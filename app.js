@@ -22,10 +22,11 @@ function makeRequest(url) {
   });
 }
 
-let vertexShaderCode, fragmentShaderCode;
-let shaderPromises = ['vertexShader.glsl', 'fragmentShader.glsl'].map(shader => makeRequest('shader/'+shader));
+let vertexShaderCode, fragmentShaderCode, bunnyVShader, bunnyFShader;
+let shaderPromises = ['vertexShader.glsl', 'fragmentShader.glsl', 'bunnyVShader.glsl', 'bunnyFShader.glsl']
+	.map(shader => makeRequest('shader/'+shader));
 let shadersLoaded = Promise.all(shaderPromises).then(shaderSources => {
-	[vertexShaderCode, fragmentShaderCode] = shaderSources;
+	[vertexShaderCode, fragmentShaderCode, bunnyVShader, bunnyFShader] = shaderSources;
 });
 
 shadersLoaded.catch(err => {
@@ -84,20 +85,30 @@ function init() {
 			new GLSLAttribute('texturePoint', 2, 8, 6),
 		],
 		[
-			'block-texture'
+			'block-texture',
+			'light-texture'
 		]
 	);
 
-	blockMeshSet.bind();
-	programInfo.enableAttributes();
-	blockMeshSet.unbind();
+	let bunnyMeshes = [new Bunny(0, 0, 0)];
+	let bunnyMeshSet = new MeshSet(gl, bunnyMeshes);
+	let bunnyProgramInfo = new ProgramInfo(gl, bunnyVShader, bunnyFShader,
+		[
+			new GLSLAttribute('vertCoord', 3, 6, 0),
+			new GLSLAttribute('normal', 3, 6, 3),
+		],
+		[]
+	);
 
+	// gl.clearColor(0.8, 0.9, 1.0, 1.0); // light blue
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 
 	let matViewUniformLocation = gl.getUniformLocation(programInfo.program, 'mView');
 	let matProjUniformLocation = gl.getUniformLocation(programInfo.program, 'mProj');
+	let matViewUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'mView');
+	let matProjUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'mProj');
 	let lightPointUniformLocation = gl.getUniformLocation(programInfo.program, 'lightPoint');
 
 	let viewMatrix = new Float32Array(16);
@@ -108,6 +119,9 @@ function init() {
 	programInfo.use();
 	gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
 	gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
+	bunnyProgramInfo.use();
+	gl.uniformMatrix4fv(matViewUniformLocationBunny, gl.FALSE, viewMatrix);
+	gl.uniformMatrix4fv(matProjUniformLocationBunny, gl.FALSE, projMatrix);
 
 	//
 	// resize handler
@@ -117,7 +131,10 @@ function init() {
 		canvas.height = window.innerHeight;
 		gl.viewport(0, 0, window.innerWidth, window.innerHeight);
 		mat4.perspective(projMatrix, glMatrix.toRadian(45), window.innerWidth / window.innerHeight, 1.0, 5000.0);
+		programInfo.use();
 		gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
+		bunnyProgramInfo.use();
+		gl.uniformMatrix4fv(matProjUniformLocationBunny, gl.FALSE, projMatrix);
 	}
 	document.body.onresize = resize;
 	resize();
@@ -126,7 +143,7 @@ function init() {
 	// state varialbes
 	//
 	let keysPressed = {};
-	let x=0, y=0, z=0, roty=0, rotx=0;
+	let x=0, y=0, z=10, roty=0, rotx=0;
 	let mouseX = 0;
 	let mouseY = 0;
 	let origin = [0, 0, 0];
@@ -267,14 +284,17 @@ function init() {
 			change = true;
 		}
 		if (change) {
-			// if (y > -1.0) {
-			// 	y = -1.0;
-			// }
+			if (y > -1.0) {
+				y = -1.0;
+			}
 			mat4.identity(viewMatrix);
 			mat4.rotateX(viewMatrix, viewMatrix, rotx);
 			mat4.rotateY(viewMatrix, viewMatrix, roty);
 			mat4.translate(viewMatrix, viewMatrix, [x, y, z]);
+			programInfo.use();
 			gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
+			bunnyProgramInfo.use();
+			gl.uniformMatrix4fv(matViewUniformLocationBunny, gl.FALSE, viewMatrix);
 			change = false;
 		}
 	}
@@ -284,18 +304,32 @@ function init() {
 	//
 	function draw() {
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-		programInfo.use();
-		programInfo.textures.forEach((texture, i) => {
-			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.activeTexture(gl.TEXTURE0 + i);
-		});
 		let sunRot = (performance.now()/1000) % TAU;
 		let sunPoint = [Math.sin(sunRot)*15.0, Math.cos(sunRot)*15.0, 0];
-		gl.uniform3f(lightPointUniformLocation, ...sunPoint);
 		programInfo.use();
+		// Blocks
+		programInfo.bindTextures([0]);
+		gl.uniform3f(lightPointUniformLocation, ...sunPoint);
 		blockMeshSet.bind();
+		programInfo.enableAttributes();
 		blockMeshSet.draw();
+		programInfo.disableAttributes();
 		blockMeshSet.unbind();
+		// Light
+		programInfo.bindTextures([1]);
+		lightMeshSet.updateMeshData([new Block(...sunPoint)]);
+		lightMeshSet.bind();
+		programInfo.enableAttributes();
+		lightMeshSet.draw();
+		programInfo.disableAttributes();
+		lightMeshSet.unbind();
+		// bunny
+		bunnyProgramInfo.use();
+		bunnyMeshSet.bind();
+		bunnyProgramInfo.enableAttributes();
+		bunnyMeshSet.draw();
+		bunnyProgramInfo.disableAttributes();
+		bunnyMeshSet.unbind();
 	}
 
 	//

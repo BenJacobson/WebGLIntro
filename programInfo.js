@@ -9,14 +9,14 @@ function GLSLAttribute(name, size, stride, offset) {
 function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource, attributes, textureIds) {
 	this.gl = glContext;
 	let vertexShader = this.gl.createShader(this.gl.VERTEX_SHADER);
-	this.gl.shaderSource(vertexShader, vertexShaderCode);
+	this.gl.shaderSource(vertexShader, vertexShaderSource);
 	this.gl.compileShader(vertexShader);
 	if (!this.gl.getShaderParameter(vertexShader, this.gl.COMPILE_STATUS)) {
 		console.error('Failed to compile vertex shader', this.gl.getShaderInfoLog(vertexShader));
 	}
 
 	let fragmentShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-	this.gl.shaderSource(fragmentShader, fragmentShaderCode);
+	this.gl.shaderSource(fragmentShader, fragmentShaderSource);
 	this.gl.compileShader(fragmentShader);
 	if (!this.gl.getShaderParameter(fragmentShader, this.gl.COMPILE_STATUS)) {
 		console.error('Failed to compile fragment shader', this.gl.getShaderInfoLog(fragmentShader));
@@ -73,5 +73,18 @@ ProgramInfo.prototype.enableAttributes = function() {
 			attribute.offset*Float32Array.BYTES_PER_ELEMENT
 		);
 		this.gl.enableVertexAttribArray(attribute.location);
+	});
+}
+
+ProgramInfo.prototype.disableAttributes = function() {
+	this.attributes.forEach(attribute => {
+		this.gl.disableVertexAttribArray(attribute.location);
+	});
+}
+
+ProgramInfo.prototype.bindTextures = function(indecies) {
+	indecies.forEach((index, i) => {
+		this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[index]);
+		this.gl.activeTexture(this.gl.TEXTURE0 + i);
 	});
 }
