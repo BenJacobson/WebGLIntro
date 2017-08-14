@@ -1,11 +1,13 @@
-function Block(x, y, z) {
+function Block(x=0, y=0, z=0, reverse=false) {
 	this.vertexComponents = 8;
 	this.vertexLength = 24;
 	this.customVertexData = this.vertexData.map((v, i) => {
+		let offset = i % this.vertexComponents;
 		return v +
-			(i % this.vertexComponents == 0 ? x : 0) +
-			(i % this.vertexComponents == 1 ? y : 0) +
-			(i % this.vertexComponents == 2 ? z : 0);
+			(offset == 0 ? x : 0) +
+			(offset == 1 ? y : 0) +
+			(offset == 2 ? z : 0) +
+			(reverse && offset >= 3 && offset <= 5 ? v*-2 : 0);
 	});
 }
 

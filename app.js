@@ -30,7 +30,7 @@ let shadersLoaded = Promise.all(shaderPromises).then(shaderSources => {
 });
 
 shadersLoaded.catch(err => {
-	console.log('failed to load shaders', err);
+	console.error('failed to load shaders', err);
 });
 
 // function Plane(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) {
@@ -75,7 +75,7 @@ function init() {
 	}
 	let blockMeshSet = new MeshSet(gl, blockMeshes);
 
-	let lightMeshes = [new Block(0, 0, 0)];
+	let lightMeshes = [new Block(0, 0, 0, true)];
 	let lightMeshSet = new MeshSet(gl, lightMeshes);
 
 	let programInfo = new ProgramInfo(gl, vertexShaderCode, fragmentShaderCode,
@@ -143,7 +143,7 @@ function init() {
 	// state varialbes
 	//
 	let keysPressed = {};
-	let x=0, y=0, z=10, roty=0, rotx=0;
+	let x=0, y=0, z=-40, roty=0, rotx=0;
 	let mouseX = 0;
 	let mouseY = 0;
 	let origin = [0, 0, 0];
