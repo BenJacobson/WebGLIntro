@@ -22,11 +22,21 @@ function makeRequest(url) {
   });
 }
 
-let vertexShaderCode, fragmentShaderCode, bunnyVShader, bunnyFShader;
-let shaderPromises = ['vertexShader.glsl', 'fragmentShader.glsl', 'bunnyVShader.glsl', 'bunnyFShader.glsl']
-	.map(shader => makeRequest('shader/'+shader));
+let vertexShader = 'vertexShader.glsl';
+let fragmentShader = 'fragmentShader.glsl';
+let bunnyVShader = 'bunnyVShader.glsl';
+let bunnyFShader = 'bunnyFShader.glsl';
+let shaders = [vertexShader, fragmentShader, bunnyVShader, bunnyFShader];
+
+let shaderPromises = shaders.map(shader => makeRequest('shader/'+shader));
+let shaderMap;
+
 let shadersLoaded = Promise.all(shaderPromises).then(shaderSources => {
-	[vertexShaderCode, fragmentShaderCode, bunnyVShader, bunnyFShader] = shaderSources;
+	shaderMap = new Map(
+		shaders.map((shader, index) => {
+			return [shader, shaderSources[index]];
+		})
+	);
 });
 
 shadersLoaded.catch(err => {
@@ -50,10 +60,10 @@ shadersLoaded.catch(err => {
 
 function init() {
 	let canvas = document.getElementById('glCanvas');
-	let gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+	let gl = canvas.getContext('webgl2');
 
 	if (!gl) {
-		alert('Your browser does not support WebGL');
+		alert('Your browser does not support WebGL2');
 		return;
 	}
 
@@ -66,6 +76,8 @@ function init() {
 	// 	 boundaries, -2.55, -boundaries,
 	// ));
 
+	let programInfo = new ProgramInfo(gl, shaderMap.get(vertexShader), shaderMap.get(fragmentShader));
+
 	let blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
 	for (let i = 0; i < 1000; i++) {
 		let x = Math.floor(Math.random()*1000) - 500;
@@ -73,26 +85,33 @@ function init() {
 		let z = Math.floor(Math.random()*1000) - 500;
 		blockMeshes.push(new Block(x, y, z));
 	}
-	let blockMeshSet = new MeshSet(gl, blockMeshes);
-
-	let lightMeshes = [new Block(0, 0, 0, true)];
-	let lightMeshSet = new MeshSet(gl, lightMeshes);
-
-	let programInfo = new ProgramInfo(gl, vertexShaderCode, fragmentShaderCode,
+	let blockMeshSet = new MeshSet(gl, blockMeshes, programInfo,
 		[
 			new GLSLAttribute('vertCoord', 3, 8, 0),
 			new GLSLAttribute('normal', 3, 8, 3),
 			new GLSLAttribute('texturePoint', 2, 8, 6),
 		],
 		[
-			'block-texture',
+			'block-texture'
+		]
+	);
+
+	let lightMeshes = [new Block(0, 0, 0, true)];
+	let lightMeshSet = new MeshSet(gl, lightMeshes, programInfo,
+		[
+			new GLSLAttribute('vertCoord', 3, 8, 0),
+			new GLSLAttribute('normal', 3, 8, 3),
+			new GLSLAttribute('texturePoint', 2, 8, 6),
+		],
+		[
 			'light-texture'
 		]
 	);
 
+
+	let bunnyProgramInfo = new ProgramInfo(gl, shaderMap.get(bunnyVShader), shaderMap.get(bunnyFShader));
 	let bunnyMeshes = [new Bunny(0, 0, 0)];
-	let bunnyMeshSet = new MeshSet(gl, bunnyMeshes);
-	let bunnyProgramInfo = new ProgramInfo(gl, bunnyVShader, bunnyFShader,
+	let bunnyMeshSet = new MeshSet(gl, bunnyMeshes, bunnyProgramInfo,
 		[
 			new GLSLAttribute('vertCoord', 3, 6, 0),
 			new GLSLAttribute('normal', 3, 6, 3),
@@ -308,28 +327,20 @@ function init() {
 		let sunPoint = [Math.sin(sunRot)*15.0, Math.cos(sunRot)*15.0, 0];
 		programInfo.use();
 		// Blocks
-		programInfo.bindTextures([0]);
+		gl.bindVertexArray(blockMeshSet.vao);
 		gl.uniform3f(lightPointUniformLocation, ...sunPoint);
-		blockMeshSet.bind();
-		programInfo.enableAttributes();
+		blockMeshSet.bindTextures();
 		blockMeshSet.draw();
-		programInfo.disableAttributes();
-		blockMeshSet.unbind();
 		// Light
-		programInfo.bindTextures([1]);
+		gl.bindVertexArray(lightMeshSet.vao);
 		lightMeshSet.updateMeshData([new Block(...sunPoint)]);
-		lightMeshSet.bind();
-		programInfo.enableAttributes();
+		lightMeshSet.bindTextures();
 		lightMeshSet.draw();
-		programInfo.disableAttributes();
-		lightMeshSet.unbind();
 		// bunny
 		bunnyProgramInfo.use();
-		bunnyMeshSet.bind();
-		bunnyProgramInfo.enableAttributes();
+		gl.bindVertexArray(bunnyMeshSet.vao);
+		bunnyMeshSet.bindTextures();
 		bunnyMeshSet.draw();
-		bunnyProgramInfo.disableAttributes();
-		bunnyMeshSet.unbind();
 	}
 
 	//

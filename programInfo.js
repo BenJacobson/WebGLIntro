@@ -6,7 +6,7 @@ function GLSLAttribute(name, size, stride, offset) {
 	this.location = undefined;
 }
 
-function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource, attributes, textureIds) {
+function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource) {
 	this.gl = glContext;
 	let vertexShader = this.gl.createShader(this.gl.VERTEX_SHADER);
 	this.gl.shaderSource(vertexShader, vertexShaderSource);
@@ -35,56 +35,8 @@ function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource, attrib
 	if (!this.gl.getProgramParameter(this.program, this.gl.VALIDATE_STATUS)) {
 		console.error('Failed to validate program', this.gl.getProgramInfoLog(this.program));
 	}
-
-	this.attributes = attributes;
-	this.attributes.forEach(attribute => {
-		attribute.location = this.gl.getAttribLocation(this.program, attribute.name);
-	});
-
-	this.textures = textureIds.map(textureId => {
-		let texture = this.gl.createTexture();
-		this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-		this.gl.texImage2D(
-			this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA,
-			this.gl.UNSIGNED_BYTE,
-			document.getElementById(textureId)
-		);
-		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
-		this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-		return texture;
-	});
 }
 
 ProgramInfo.prototype.use = function() {
 	this.gl.useProgram(this.program);
-}
-
-ProgramInfo.prototype.enableAttributes = function() {
-	this.attributes.forEach(attribute => {
-		this.gl.vertexAttribPointer(
-			attribute.location,
-			attribute.size,
-			this.gl.FLOAT,
-			this.gl.FALSE,
-			attribute.stride*Float32Array.BYTES_PER_ELEMENT,
-			attribute.offset*Float32Array.BYTES_PER_ELEMENT
-		);
-		this.gl.enableVertexAttribArray(attribute.location);
-	});
-}
-
-ProgramInfo.prototype.disableAttributes = function() {
-	this.attributes.forEach(attribute => {
-		this.gl.disableVertexAttribArray(attribute.location);
-	});
-}
-
-ProgramInfo.prototype.bindTextures = function(indecies) {
-	indecies.forEach((index, i) => {
-		this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[index]);
-		this.gl.activeTexture(this.gl.TEXTURE0 + i);
-	});
 }
