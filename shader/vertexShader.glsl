@@ -1,12 +1,14 @@
+#version 300 es
+
 precision highp float;
 
-attribute vec3 vertCoord;
-attribute vec3 normal;
-attribute vec2 texturePoint;
+in vec3 vertCoord;
+in vec3 normal;
+in vec2 texturePoint;
 
-varying vec2 fragTexturePoint;
-varying vec3 fragCoord;
-varying vec3 fragNormal;
+out vec2 fragTexturePoint;
+out vec3 fragCoord;
+out vec3 fragNormal;
 
 uniform mat4 mView;
 uniform mat4 mProj;

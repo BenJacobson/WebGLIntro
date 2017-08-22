@@ -126,9 +126,10 @@ function init() {
 
 	let matViewUniformLocation = gl.getUniformLocation(programInfo.program, 'mView');
 	let matProjUniformLocation = gl.getUniformLocation(programInfo.program, 'mProj');
+	let lightPointUniformLocation = gl.getUniformLocation(programInfo.program, 'lightPoint');
 	let matViewUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'mView');
 	let matProjUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'mProj');
-	let lightPointUniformLocation = gl.getUniformLocation(programInfo.program, 'lightPoint');
+	let lightPointUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'lightPoint');
 
 	let viewMatrix = new Float32Array(16);
 	let projMatrix = new Float32Array(16);
@@ -324,7 +325,7 @@ function init() {
 	function draw() {
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 		let sunRot = (performance.now()/1000) % TAU;
-		let sunPoint = [Math.sin(sunRot)*15.0, Math.cos(sunRot)*15.0, 0];
+		let sunPoint = [-x, -y, -z]; // [Math.sin(sunRot)*15.0, Math.cos(sunRot)*15.0, 0];
 		programInfo.use();
 		// Blocks
 		gl.bindVertexArray(blockMeshSet.vao);
@@ -332,12 +333,13 @@ function init() {
 		blockMeshSet.bindTextures();
 		blockMeshSet.draw();
 		// Light
-		gl.bindVertexArray(lightMeshSet.vao);
-		lightMeshSet.updateVertexData([new Block(...sunPoint)]);
-		lightMeshSet.bindTextures();
-		lightMeshSet.draw();
+		// gl.bindVertexArray(lightMeshSet.vao);
+		// lightMeshSet.updateVertexData([new Block(...sunPoint)]);
+		// lightMeshSet.bindTextures();
+		// lightMeshSet.draw();
 		// // bunny
 		bunnyProgramInfo.use();
+		gl.uniform3f(lightPointUniformLocationBunny, ...sunPoint);
 		gl.bindVertexArray(bunnyMeshSet.vao);
 		bunnyMeshSet.bindTextures();
 		bunnyMeshSet.draw();
