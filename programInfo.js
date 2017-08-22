@@ -1,11 +1,3 @@
-function GLSLAttribute(name, size, stride, offset) {
-	this.name = name;
-	this.size = size;
-	this.stride = stride;
-	this.offset = offset;
-	this.location = undefined;
-}
-
 function ProgramInfo(glContext, vertexShaderSource, fragmentShaderSource) {
 	this.gl = glContext;
 	let vertexShader = this.gl.createShader(this.gl.VERTEX_SHADER);

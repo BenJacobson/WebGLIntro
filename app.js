@@ -87,9 +87,9 @@ function init() {
 	}
 	let blockMeshSet = new MeshSet(gl, blockMeshes, programInfo,
 		[
-			new GLSLAttribute('vertCoord', 3, 8, 0),
-			new GLSLAttribute('normal', 3, 8, 3),
-			new GLSLAttribute('texturePoint', 2, 8, 6),
+			new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
+			new GLSLAttribute('normal', 'normalData', 'normalComponents'),
+			new GLSLAttribute('texturePoint', 'textureCoords', 'textureComponents'),
 		],
 		[
 			'block-texture'
@@ -99,9 +99,9 @@ function init() {
 	let lightMeshes = [new Block(0, 0, 0, true)];
 	let lightMeshSet = new MeshSet(gl, lightMeshes, programInfo,
 		[
-			new GLSLAttribute('vertCoord', 3, 8, 0),
-			new GLSLAttribute('normal', 3, 8, 3),
-			new GLSLAttribute('texturePoint', 2, 8, 6),
+			new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
+			new GLSLAttribute('normal', 'normalData', 'normalComponents'),
+			new GLSLAttribute('texturePoint', 'textureCoords', 'textureComponents'),
 		],
 		[
 			'light-texture'
@@ -113,8 +113,8 @@ function init() {
 	let bunnyMeshes = [new Bunny(0, 0, 0)];
 	let bunnyMeshSet = new MeshSet(gl, bunnyMeshes, bunnyProgramInfo,
 		[
-			new GLSLAttribute('vertCoord', 3, 6, 0),
-			new GLSLAttribute('normal', 3, 6, 3),
+			new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
+			new GLSLAttribute('normal', 'normalData', 'normalComponents'),
 		],
 		[]
 	);
@@ -333,10 +333,10 @@ function init() {
 		blockMeshSet.draw();
 		// Light
 		gl.bindVertexArray(lightMeshSet.vao);
-		lightMeshSet.updateMeshData([new Block(...sunPoint)]);
+		lightMeshSet.updateVertexData([new Block(...sunPoint)]);
 		lightMeshSet.bindTextures();
 		lightMeshSet.draw();
-		// bunny
+		// // bunny
 		bunnyProgramInfo.use();
 		gl.bindVertexArray(bunnyMeshSet.vao);
 		bunnyMeshSet.bindTextures();
@@ -367,6 +367,3 @@ function init() {
 		timeBased = e.target.checked;
 	});
 }
-
-// https://webglfundamentals.org/webgl/lessons/webgl-anti-patterns.html
-// http://gdcvault.com/play/1020791/
