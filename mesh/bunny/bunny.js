@@ -1,6 +1,6 @@
 function Bunny(x, y, z) {
     this.vertexLength = 34817;
-    this.customVertexData = this.vertexData.map((v, i) => {
+    this.vertexData = this.vertexData.map((v, i) => {
         return v +
             (i % this.vertexComponents == 0 ? x : 0) +
             (i % this.vertexComponents == 1 ? y : 0) +
@@ -8,7 +8,7 @@ function Bunny(x, y, z) {
     });
 }
 
-this.vertexComponents = 3;
+Bunny.prototype.vertexComponents = 3;
 Bunny.prototype.vertexData = [
 0.1102022, 0.74011, 1.132398,
 -1.576714, 1.97364, -0.0373716,

@@ -1,34 +1,10 @@
-function makeRequest(url) {
-  return new Promise(function (resolve, reject) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url);
-    xhr.onload = function () {
-      if (this.status >= 200 && this.status < 300) {
-        resolve(xhr.response);
-      } else {
-        reject({
-          status: this.status,
-          statusText: xhr.statusText
-        });
-      }
-    };
-    xhr.onerror = function () {
-      reject({
-        status: this.status,
-        statusText: xhr.statusText
-      });
-    };
-    xhr.send();
-  });
-}
-
 let vertexShader = 'vertexShader.glsl';
 let fragmentShader = 'fragmentShader.glsl';
 let bunnyVShader = 'bunnyVShader.glsl';
 let bunnyFShader = 'bunnyFShader.glsl';
 let shaders = [vertexShader, fragmentShader, bunnyVShader, bunnyFShader];
 
-let shaderPromises = shaders.map(shader => makeRequest('shader/'+shader));
+let shaderPromises = shaders.map(shader => Request.makeRequest('shader/'+shader));
 let shaderMap;
 
 let shadersLoaded = Promise.all(shaderPromises).then(shaderSources => {
@@ -43,21 +19,6 @@ shadersLoaded.catch(err => {
 	console.error('failed to load shaders', err);
 });
 
-// function Plane(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) {
-// 	this.customVertexData = [
-// 		x1, y1, z1,    0.5, 0.25, 0.05,
-// 		x2, y2, z2,    0.5, 0.25, 0.05,
-// 		x3, y3, z3,    0.5, 0.25, 0.05,
-// 		x4, y4, z4,    0.5, 0.25, 0.05
-// 	];
-// 	this.vertexLength = 4;
-// }
-
-// Plane.prototype.indexData = [
-// 	0, 1, 2,
-// 	0, 2, 3
-// ];
-
 function init() {
 	let canvas = document.getElementById('glCanvas');
 	let gl = canvas.getContext('webgl2');
@@ -66,15 +27,6 @@ function init() {
 		alert('Your browser does not support WebGL2');
 		return;
 	}
-
-	// make all the meshes
-	// let boundaries = 10000;
-	// meshes.push(new Plane(
-	// 	-boundaries, -2.55, -boundaries,
-	// 	-boundaries, -2.55, boundaries,
-	// 	 boundaries, -2.55, boundaries,
-	// 	 boundaries, -2.55, -boundaries,
-	// ));
 
 	let programInfo = new ProgramInfo(gl, shaderMap.get(vertexShader), shaderMap.get(fragmentShader));
 
@@ -110,7 +62,7 @@ function init() {
 
 
 	let bunnyProgramInfo = new ProgramInfo(gl, shaderMap.get(bunnyVShader), shaderMap.get(bunnyFShader));
-	let bunnyMeshes = [new Bunny(0, 0, 0)];
+	let bunnyMeshes = [new Bunny(0, 10, 0)];
 	let bunnyMeshSet = new MeshSet(gl, bunnyMeshes, bunnyProgramInfo,
 		[
 			new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
@@ -119,8 +71,17 @@ function init() {
 		[]
 	);
 
+	let sphereMeshes = [new Sphere(20, -10, 0, 0), new Sphere(20, 0, 0, 0), new Sphere(20, 10, 0, 0)];
+	let sphereMeshSet = new MeshSet(gl, sphereMeshes, bunnyProgramInfo,
+		[
+			new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
+			new GLSLAttribute('normal', 'normalData', 'normalComponents'),
+		],
+		[]
+	);
+
 	// gl.clearColor(0.8, 0.9, 1.0, 1.0); // light blue
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clearColor(0.0, 0.0, 0.0, 1.0); // black
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 
@@ -324,8 +285,10 @@ function init() {
 	//
 	function draw() {
 		gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-		let sunRot = (performance.now()/1000) % TAU;
-		let sunPoint = [-x, -y, -z]; // [Math.sin(sunRot)*15.0, Math.cos(sunRot)*15.0, 0];
+		let sunRotx = (performance.now()/1333) % TAU;
+		let sunRoty = (performance.now()/917) % TAU;
+		let sunRotz = (performance.now()/577) % TAU;
+		let sunPoint = [Math.sin(sunRotx)*15.0, Math.sin(sunRoty)*15.0, Math.sin(sunRotz)*15.0];
 		programInfo.use();
 		// Blocks
 		gl.bindVertexArray(blockMeshSet.vao);
@@ -333,25 +296,27 @@ function init() {
 		blockMeshSet.bindTextures();
 		blockMeshSet.draw();
 		// Light
-		// gl.bindVertexArray(lightMeshSet.vao);
-		// lightMeshSet.updateVertexData([new Block(...sunPoint)]);
-		// lightMeshSet.bindTextures();
-		// lightMeshSet.draw();
+		gl.bindVertexArray(lightMeshSet.vao);
+		lightMeshSet.updateVertexData([new Block(...sunPoint)]);
+		lightMeshSet.bindTextures();
+		lightMeshSet.draw();
 		// // bunny
 		bunnyProgramInfo.use();
 		gl.uniform3f(lightPointUniformLocationBunny, ...sunPoint);
 		gl.bindVertexArray(bunnyMeshSet.vao);
-		bunnyMeshSet.bindTextures();
 		bunnyMeshSet.draw();
+		// sphere
+		gl.bindVertexArray(sphereMeshSet.vao);
+		sphereMeshSet.draw();
 	}
 
 	//
 	// Main render loop
 	//
 	function loop() {
+		requestAnimationFrame(loop);
 		move();
 		draw();
-		requestAnimationFrame(loop);
 	}
 	requestAnimationFrame(loop);
 
