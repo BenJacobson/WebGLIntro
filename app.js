@@ -1,25 +1,35 @@
-let vertexShader = 'vertexShader.glsl';
-let fragmentShader = 'fragmentShader.glsl';
-let bunnyVShader = 'bunnyVShader.glsl';
-let bunnyFShader = 'bunnyFShader.glsl';
-let shaders = [vertexShader, fragmentShader, bunnyVShader, bunnyFShader];
+function App() {
+	this.loadShaders();
+}
 
-let shaderPromises = shaders.map(shader => Request.makeRequest('shader/'+shader));
-let shaderMap;
+App.prototype.loadShaders = function() {
+	// Identify shaders
+	this.vertexShader = 'vertexShader.glsl';
+	this.fragmentShader = 'fragmentShader.glsl';
+	this.bunnyVShader = 'bunnyVShader.glsl';
+	this.bunnyFShader = 'bunnyFShader.glsl';
+	let shaders = [this.vertexShader, this.fragmentShader, this.bunnyVShader, this.bunnyFShader];
+	// Load shaders
+	let shaderPromises = shaders.map(shader => Request.makeRequest('shader/'+shader));
+	this.shadersLoaded = Promise.all(shaderPromises).then(function(shaderSources) {
+		this.shaderMap = new Map(
+			shaders.map((shader, index) => {
+				return [shader, shaderSources[index]];
+			})
+		);
+	}.bind(this));
+	this.shadersLoaded.catch(err => {
+		console.error('failed to load shaders', err);
+	});
+}
 
-let shadersLoaded = Promise.all(shaderPromises).then(shaderSources => {
-	shaderMap = new Map(
-		shaders.map((shader, index) => {
-			return [shader, shaderSources[index]];
-		})
-	);
-});
+App.prototype.start = function() {
+	this.shadersLoaded.then(function() {
+		this.init();
+	}.bind(this));
+}
 
-shadersLoaded.catch(err => {
-	console.error('failed to load shaders', err);
-});
-
-function init() {
+App.prototype.init = function() {
 	let canvas = document.getElementById('glCanvas');
 	let gl = canvas.getContext('webgl2');
 
@@ -28,7 +38,7 @@ function init() {
 		return;
 	}
 
-	let programInfo = new ProgramInfo(gl, shaderMap.get(vertexShader), shaderMap.get(fragmentShader));
+	let programInfo = new ProgramInfo(gl, this.shaderMap.get(this.vertexShader), this.shaderMap.get(this.fragmentShader));
 
 	let blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
 	for (let i = 0; i < 1000; i++) {
@@ -61,7 +71,7 @@ function init() {
 	);
 
 
-	let bunnyProgramInfo = new ProgramInfo(gl, shaderMap.get(bunnyVShader), shaderMap.get(bunnyFShader));
+	let bunnyProgramInfo = new ProgramInfo(gl, this.shaderMap.get(this.bunnyVShader), this.shaderMap.get(this.bunnyFShader));
 	let bunnyMeshes = [new Bunny(0, 10, 0)];
 	let bunnyMeshSet = new MeshSet(gl, bunnyMeshes, bunnyProgramInfo,
 		[
@@ -334,3 +344,5 @@ function init() {
 		timeBased = e.target.checked;
 	});
 }
+
+let app = new App();
