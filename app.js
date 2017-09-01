@@ -1,30 +1,30 @@
 function App() {
-	this.loadShaders();
+	this.loadAssets();
 }
 
-App.prototype.loadShaders = function() {
-	// Identify shaders
-	this.vertexShader = 'vertexShader.glsl';
-	this.fragmentShader = 'fragmentShader.glsl';
-	this.bunnyVShader = 'bunnyVShader.glsl';
-	this.bunnyFShader = 'bunnyFShader.glsl';
-	let shaders = [this.vertexShader, this.fragmentShader, this.bunnyVShader, this.bunnyFShader];
+App.prototype.loadAssets = function() {
+	// Identify assets
+	this.vertexShader = 'shader/vertexShader.glsl';
+	this.fragmentShader = 'shader/fragmentShader.glsl';
+	this.bunnyVShader = 'shader/bunnyVShader.glsl';
+	this.bunnyFShader = 'shader/bunnyFShader.glsl';
+	let assetNames = [this.vertexShader, this.fragmentShader, this.bunnyVShader, this.bunnyFShader];
 	// Load shaders
-	let shaderPromises = shaders.map(shader => Request.makeRequest('shader/'+shader));
-	this.shadersLoaded = Promise.all(shaderPromises).then(function(shaderSources) {
-		this.shaderMap = new Map(
-			shaders.map((shader, index) => {
-				return [shader, shaderSources[index]];
+	let assetPromises = assetNames.map(assetName => Request.makeRequest(assetName));
+	this.assetsLoaded = Promise.all(assetPromises).then(function(assetSources) {
+		this.assetMap = new Map(
+			assetNames.map((asset, index) => {
+				return [asset, assetSources[index]];
 			})
 		);
 	}.bind(this));
-	this.shadersLoaded.catch(err => {
-		console.error('failed to load shaders', err);
+	this.assetsLoaded.catch(err => {
+		console.error('failed to load assets', err);
 	});
 }
 
 App.prototype.start = function() {
-	this.shadersLoaded.then(function() {
+	this.assetsLoaded.then(function() {
 		this.init();
 	}.bind(this));
 }
@@ -38,7 +38,7 @@ App.prototype.init = function() {
 		return;
 	}
 
-	let programInfo = new ProgramInfo(gl, this.shaderMap.get(this.vertexShader), this.shaderMap.get(this.fragmentShader));
+	let programInfo = new ProgramInfo(gl, this.assetMap.get(this.vertexShader), this.assetMap.get(this.fragmentShader));
 
 	let blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
 	for (let i = 0; i < 1000; i++) {
@@ -71,7 +71,7 @@ App.prototype.init = function() {
 	);
 
 
-	let bunnyProgramInfo = new ProgramInfo(gl, this.shaderMap.get(this.bunnyVShader), this.shaderMap.get(this.bunnyFShader));
+	let bunnyProgramInfo = new ProgramInfo(gl, this.assetMap.get(this.bunnyVShader), this.assetMap.get(this.bunnyFShader));
 	let bunnyMeshes = [new Bunny(0, 10, 0)];
 	let bunnyMeshSet = new MeshSet(gl, bunnyMeshes, bunnyProgramInfo,
 		[
@@ -134,11 +134,9 @@ App.prototype.init = function() {
 	// state varialbes
 	//
 	let keysPressed = {};
-	let x=0, y=0, z=-40, roty=0, rotx=0;
+	let camara = new Camara(0, 0, -50, 0, 0);
 	let mouseX = 0;
 	let mouseY = 0;
-	let origin = [0, 0, 0];
-	let change = true;
 	let TAU = Math.PI * 2;
 	let translateFactor = 15;
 	let rotateFactor = 1000;
@@ -176,117 +174,61 @@ App.prototype.init = function() {
 		if (keysPressed['w']) {
 			let speed =  (now - keysPressed['w']) / translateFactor;
 			keysPressed['w'] = now;
-			let v = timeBased ?
-						[0, 0, speed] :
-						[0, 0, translateSpeed];
-			vec3.rotateX(v, v, origin, -rotx);
-			vec3.rotateY(v, v, origin, -roty);
-			x += v[0];
-			y += v[1];
-			z += v[2];
-			change = true;
+			camara.moveForward(timeBased ? speed : translateSpeed);
 		}
 		if (keysPressed['s']) {
 			let speed = (now - keysPressed['s']) / translateFactor;
 			keysPressed['s'] = now;
-			let v = timeBased ?
-					[0, 0, -speed] :
-					[0, 0, -translateSpeed];
-			vec3.rotateX(v, v, origin, -rotx);
-			vec3.rotateY(v, v, origin, -roty);
-			x += v[0];
-			y += v[1];
-			z += v[2];
-			change = true;
+			camara.moveBackward(timeBased ? speed : translateSpeed);
 		}
 		if (keysPressed['a']) {
 			let speed = (now - keysPressed['a']) / translateFactor;
 			keysPressed['a'] = now;
-			let v = timeBased ?
-					[speed, 0, 0] :
-					[translateSpeed, 0, 0];
-			vec3.rotateX(v, v, origin, -rotx);
-			vec3.rotateY(v, v, origin, -roty);
-			x += v[0];
-			y += v[1];
-			z += v[2];
-			change = true;
+			camara.moveLeft(timeBased ? speed : translateSpeed);
 		}
 		if (keysPressed['d']) {
 			let speed = (now - keysPressed['d']) / translateFactor;
 			keysPressed['d'] = now;
-			let v = timeBased ?
-					[-speed, 0, 0] :
-					[-translateSpeed, 0, 0];
-			vec3.rotateX(v, v, origin, -rotx);
-			vec3.rotateY(v, v, origin, -roty);
-			x += v[0];
-			y += v[1];
-			z += v[2];
-			change = true;
+			camara.moveRight(timeBased ? speed : translateSpeed);
 		}
 		if (keysPressed['ArrowLeft']) {
 			let speed = (now - keysPressed['ArrowLeft']) / rotateFactor;
 			keysPressed['ArrowLeft'] = now;
-			roty -= timeBased ?
-					speed :
-					rotateSpeed;
-			if (roty < 0) {
-				roty += TAU;
-			}
-			change = true;
+			camara.rotateLeft(timeBased ? speed : rotateSpeed);
 		}
 		if (keysPressed['ArrowRight']) {
 			let speed = (now - keysPressed['ArrowRight']) / rotateFactor;
 			keysPressed['ArrowRight'] = now;
-			roty += timeBased ?
-					speed :
-					rotateSpeed;
-			if (roty > TAU) {
-				roty -= TAU;
-			}
-			change = true;
+			camara.rotateRight(timeBased ? speed : rotateSpeed);
 		}
 		if (keysPressed['ArrowUp']) {
 			let speed = (now - keysPressed['ArrowUp']) / rotateFactor;
 			keysPressed['ArrowUp'] = now;
-			rotx -= timeBased ?
-					speed :
-					rotateSpeed;
-			if (rotx < 0) {
-				rotx += TAU;
-			}
-			change = true;
+			camara.rotateForward(timeBased ? speed : rotateSpeed);
 		}
 		if (keysPressed['ArrowDown']) {
 			let speed = (now - keysPressed['ArrowDown']) / rotateFactor;
 			keysPressed['ArrowDown'] = now;
-			rotx += timeBased ?
-					speed :
-					rotateSpeed;
-			if (rotx > TAU) {
-				rotx -= TAU;
-			}
-			change = true;
+			camara.rotateBackward(timeBased ? speed : rotateSpeed);
 		}
 		if (mouseLook) {
-			rotx = mouseX * rotateFactor;
-			roty += mouseY;
-			change = true;
+			camara.rotx = mouseX * rotateFactor;
+			camara.roty += mouseY;
+			camara.change = true;
 		}
-		if (change) {
-			if (y > -1.0) {
-				y = -1.0;
+		if (camara.change) {
+			if (camara.y > -1.0) {
+				camara.y = -1.0;
 			}
 			mat4.identity(viewMatrix);
-			mat4.rotateX(viewMatrix, viewMatrix, rotx);
-			mat4.rotateY(viewMatrix, viewMatrix, roty);
-			mat4.translate(viewMatrix, viewMatrix, [x, y, z]);
+			mat4.rotateX(viewMatrix, viewMatrix, camara.rotx);
+			mat4.rotateY(viewMatrix, viewMatrix, camara.roty);
+			mat4.translate(viewMatrix, viewMatrix, camara.getLocation());
 			programInfo.use();
 			gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
 			bunnyProgramInfo.use();
 			gl.uniformMatrix4fv(matViewUniformLocationBunny, gl.FALSE, viewMatrix);
-			change = false;
+			camara.change = false;
 		}
 	}
 
