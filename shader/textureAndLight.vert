@@ -6,9 +6,9 @@ in vec3 vertCoord;
 in vec3 normal;
 in vec2 texturePoint;
 
-out vec2 fragTexturePoint;
 out vec3 fragCoord;
 out vec3 fragNormal;
+out vec2 fragTexturePoint;
 
 uniform mat4 mView;
 uniform mat4 mProj;

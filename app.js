@@ -5,11 +5,11 @@ class App {
 
 	loadAssets() {
 		// Identify assets
-		this.vertexShader = 'shader/vertexShader.glsl';
-		this.fragmentShader = 'shader/fragmentShader.glsl';
-		this.bunnyVShader = 'shader/bunnyVShader.glsl';
-		this.bunnyFShader = 'shader/bunnyFShader.glsl';
-		let assetNames = [this.vertexShader, this.fragmentShader, this.bunnyVShader, this.bunnyFShader];
+		this.textureAndLightVert = 'shader/textureAndLight.vert';
+		this.textureAndLightFrag = 'shader/textureAndLight.frag';
+		this.lightVert = 'shader/light.vert';
+		this.lightFrag = 'shader/light.frag';
+		let assetNames = [this.textureAndLightVert, this.textureAndLightFrag, this.lightVert, this.lightFrag];
 		// Load shaders
 		let assetPromises = assetNames.map(assetName => Request.makeRequest(assetName));
 		this.assetsLoaded = Promise.all(assetPromises).then(function(assetSources) {
@@ -25,9 +25,7 @@ class App {
 	}
 
 	start() {
-		this.assetsLoaded.then(function() {
-			this.init();
-		}.bind(this));
+		this.assetsLoaded.then(this.init.bind(this));
 	}
 
 	init() {
@@ -39,7 +37,7 @@ class App {
 			return;
 		}
 
-		let programInfo = new ProgramInfo(gl, this.assetMap.get(this.vertexShader), this.assetMap.get(this.fragmentShader));
+		let textureAndLightProgramInfo = new TextureAndLightProgramInfo(gl, this.assetMap.get(this.textureAndLightVert), this.assetMap.get(this.textureAndLightFrag));
 
 		let blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
 		for (let i = 0; i < 1000; i++) {
@@ -48,7 +46,7 @@ class App {
 			let z = Math.floor(Math.random()*1000) - 500;
 			blockMeshes.push(new Block(x, y, z));
 		}
-		let blockMeshSet = new MeshSet(gl, blockMeshes, programInfo,
+		let blockMeshSet = new MeshSet(gl, blockMeshes, textureAndLightProgramInfo,
 			[
 				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
 				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
@@ -60,7 +58,7 @@ class App {
 		);
 
 		let lightMeshes = [new Block(0, 0, 0, true)];
-		let lightMeshSet = new MeshSet(gl, lightMeshes, programInfo,
+		let lightMeshSet = new MeshSet(gl, lightMeshes, textureAndLightProgramInfo,
 			[
 				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
 				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
@@ -72,7 +70,7 @@ class App {
 		);
 
 
-		let bunnyProgramInfo = new ProgramInfo(gl, this.assetMap.get(this.bunnyVShader), this.assetMap.get(this.bunnyFShader));
+		let bunnyProgramInfo = new ProgramInfo(gl, this.assetMap.get(this.lightVert), this.assetMap.get(this.lightFrag));
 		let bunnyMeshes = [new Bunny(0, 10, 0)];
 		let bunnyMeshSet = new MeshSet(gl, bunnyMeshes, bunnyProgramInfo,
 			[
@@ -96,9 +94,6 @@ class App {
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthFunc(gl.LEQUAL);
 
-		let matViewUniformLocation = gl.getUniformLocation(programInfo.program, 'mView');
-		let matProjUniformLocation = gl.getUniformLocation(programInfo.program, 'mProj');
-		let lightPointUniformLocation = gl.getUniformLocation(programInfo.program, 'lightPoint');
 		let matViewUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'mView');
 		let matProjUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'mProj');
 		let lightPointUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'lightPoint');
@@ -108,9 +103,9 @@ class App {
 		mat4.identity(viewMatrix);
 		mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.clientWidth / canvas.clientHeight, 1.0, 5000.0);
 
-		programInfo.use();
-		gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
-		gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
+		textureAndLightProgramInfo.use();
+		textureAndLightProgramInfo.setViewMatrix(viewMatrix);
+		textureAndLightProgramInfo.setProjMatrix(projMatrix);
 		bunnyProgramInfo.use();
 		gl.uniformMatrix4fv(matViewUniformLocationBunny, gl.FALSE, viewMatrix);
 		gl.uniformMatrix4fv(matProjUniformLocationBunny, gl.FALSE, projMatrix);
@@ -123,8 +118,8 @@ class App {
 			canvas.height = window.innerHeight;
 			gl.viewport(0, 0, window.innerWidth, window.innerHeight);
 			mat4.perspective(projMatrix, glMatrix.toRadian(45), window.innerWidth / window.innerHeight, 1.0, 5000.0);
-			programInfo.use();
-			gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, projMatrix);
+			textureAndLightProgramInfo.use();
+			textureAndLightProgramInfo.setProjMatrix(projMatrix);
 			bunnyProgramInfo.use();
 			gl.uniformMatrix4fv(matProjUniformLocationBunny, gl.FALSE, projMatrix);
 		}
@@ -225,8 +220,8 @@ class App {
 				mat4.rotateX(viewMatrix, viewMatrix, camara.rotx);
 				mat4.rotateY(viewMatrix, viewMatrix, camara.roty);
 				mat4.translate(viewMatrix, viewMatrix, camara.getLocation());
-				programInfo.use();
-				gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
+				textureAndLightProgramInfo.use();
+				textureAndLightProgramInfo.setViewMatrix(viewMatrix);
 				bunnyProgramInfo.use();
 				gl.uniformMatrix4fv(matViewUniformLocationBunny, gl.FALSE, viewMatrix);
 				camara.change = false;
@@ -242,10 +237,10 @@ class App {
 			let sunRoty = (performance.now()/917) % TAU;
 			let sunRotz = (performance.now()/577) % TAU;
 			let sunPoint = [Math.sin(sunRotx)*15.0, Math.sin(sunRoty)*15.0, Math.sin(sunRotz)*15.0];
-			programInfo.use();
+			textureAndLightProgramInfo.use();
 			// Blocks
 			gl.bindVertexArray(blockMeshSet.vao);
-			gl.uniform3f(lightPointUniformLocation, ...sunPoint);
+			textureAndLightProgramInfo.setLightPoint(sunPoint);
 			blockMeshSet.bindTextures();
 			blockMeshSet.draw();
 			// Light
