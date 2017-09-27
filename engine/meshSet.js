@@ -44,6 +44,7 @@ function MeshSet(glContext, meshes, programInfo, attributes, textureIds) {
 	indexBuffer = this.gl.createBuffer();
 	this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 	this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indexData), this.gl.STATIC_DRAW);
+	this.gl.bindVertexArray(null);
 
 	this.textures = textureIds.map(textureId => {
 		let texture = this.gl.createTexture();
@@ -61,7 +62,6 @@ function MeshSet(glContext, meshes, programInfo, attributes, textureIds) {
 		return texture;
 	});
 	this.bindTextures();
-	this.gl.bindVertexArray(null);
 }
 
 MeshSet.prototype.updateVertexData = function(meshes) {

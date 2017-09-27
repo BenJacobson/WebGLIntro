@@ -70,9 +70,9 @@ class App {
 		);
 
 
-		let bunnyProgramInfo = new ProgramInfo(gl, this.assetMap.get(this.lightVert), this.assetMap.get(this.lightFrag));
+		let lightProgramInfo = new LightProgramInfo(gl, this.assetMap.get(this.lightVert), this.assetMap.get(this.lightFrag));
 		let bunnyMeshes = [new Bunny(0, 10, 0)];
-		let bunnyMeshSet = new MeshSet(gl, bunnyMeshes, bunnyProgramInfo,
+		let bunnyMeshSet = new MeshSet(gl, bunnyMeshes, lightProgramInfo,
 			[
 				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
 				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
@@ -81,7 +81,7 @@ class App {
 		);
 
 		let sphereMeshes = [new Sphere(20, -10, 0, 0), new Sphere(20, 0, 0, 0), new Sphere(20, 10, 0, 0)];
-		let sphereMeshSet = new MeshSet(gl, sphereMeshes, bunnyProgramInfo,
+		let sphereMeshSet = new MeshSet(gl, sphereMeshes, lightProgramInfo,
 			[
 				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
 				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
@@ -94,10 +94,6 @@ class App {
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthFunc(gl.LEQUAL);
 
-		let matViewUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'mView');
-		let matProjUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'mProj');
-		let lightPointUniformLocationBunny = gl.getUniformLocation(bunnyProgramInfo.program, 'lightPoint');
-
 		let viewMatrix = new Float32Array(16);
 		let projMatrix = new Float32Array(16);
 		mat4.identity(viewMatrix);
@@ -106,9 +102,9 @@ class App {
 		textureAndLightProgramInfo.use();
 		textureAndLightProgramInfo.setViewMatrix(viewMatrix);
 		textureAndLightProgramInfo.setProjMatrix(projMatrix);
-		bunnyProgramInfo.use();
-		gl.uniformMatrix4fv(matViewUniformLocationBunny, gl.FALSE, viewMatrix);
-		gl.uniformMatrix4fv(matProjUniformLocationBunny, gl.FALSE, projMatrix);
+		lightProgramInfo.use();
+		lightProgramInfo.setViewMatrix(viewMatrix);
+		lightProgramInfo.setProjMatrix(projMatrix);
 
 		//
 		// resize handler
@@ -120,8 +116,8 @@ class App {
 			mat4.perspective(projMatrix, glMatrix.toRadian(45), window.innerWidth / window.innerHeight, 1.0, 5000.0);
 			textureAndLightProgramInfo.use();
 			textureAndLightProgramInfo.setProjMatrix(projMatrix);
-			bunnyProgramInfo.use();
-			gl.uniformMatrix4fv(matProjUniformLocationBunny, gl.FALSE, projMatrix);
+			lightProgramInfo.use();
+			lightProgramInfo.setProjMatrix(projMatrix);
 		}
 		document.body.onresize = resize;
 		resize();
@@ -222,8 +218,8 @@ class App {
 				mat4.translate(viewMatrix, viewMatrix, camara.getLocation());
 				textureAndLightProgramInfo.use();
 				textureAndLightProgramInfo.setViewMatrix(viewMatrix);
-				bunnyProgramInfo.use();
-				gl.uniformMatrix4fv(matViewUniformLocationBunny, gl.FALSE, viewMatrix);
+				lightProgramInfo.use();
+				lightProgramInfo.setViewMatrix(viewMatrix);
 				camara.change = false;
 			}
 		}
@@ -249,8 +245,8 @@ class App {
 			lightMeshSet.bindTextures();
 			lightMeshSet.draw();
 			// // bunny
-			bunnyProgramInfo.use();
-			gl.uniform3f(lightPointUniformLocationBunny, ...sunPoint);
+			lightProgramInfo.use();
+			lightProgramInfo.setLightPoint(sunPoint);
 			gl.bindVertexArray(bunnyMeshSet.vao);
 			bunnyMeshSet.draw();
 			// sphere
