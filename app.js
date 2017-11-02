@@ -20,10 +20,10 @@ class App {
 
 	loadAssets() {
 		// Identify assets
-		this.textureAndLightVert = 'shader/textureAndLight.vert';
-		this.textureAndLightFrag = 'shader/textureAndLight.frag';
-		this.lightVert = 'shader/light.vert';
-		this.lightFrag = 'shader/light.frag';
+		this.textureAndLightVert = 'textureAndLight/shader/textureAndLight.vert';
+		this.textureAndLightFrag = 'textureAndLight/shader/textureAndLight.frag';
+		this.lightVert = 'light/shader/light.vert';
+		this.lightFrag = 'light/shader/light.frag';
 		let assetNames = [this.textureAndLightVert, this.textureAndLightFrag, this.lightVert, this.lightFrag];
 		// Load shaders
 		let assetPromises = assetNames.map(assetName => Request.makeRequest(assetName));
@@ -148,28 +148,15 @@ class App {
 		});
 	}
 
-	render() {
-		this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
-		let sunRotx = (performance.now()/1333) % this.TAU;
-		let sunRoty = (performance.now()/917) % this.TAU;
-		let sunRotz = (performance.now()/577) % this.TAU;
-		let sunPoint = [Math.sin(sunRotx)*15.0, Math.sin(sunRoty)*15.0, Math.sin(sunRotz)*15.0];
+	resizeHandler() {
+		this.canvas.width = window.innerWidth;
+		this.canvas.height = window.innerHeight;
+		this.gl.viewport(0, 0, window.innerWidth, window.innerHeight);
+		mat4.perspective(this.projMatrix, glMatrix.toRadian(45), window.innerWidth / window.innerHeight, 1.0, 5000.0);
 		this.textureAndLightProgramInfo.use();
-		// Blocks
-		this.textureAndLightProgramInfo.setLightPoint(sunPoint);
-		this.blockRenderer.bindTextures();
-		this.blockRenderer.render();
-		// Light
-		this.lightBlock.updateVertexData(...sunPoint);
-		this.lightBlockRenderer.checkUpdates();
-		this.lightBlockRenderer.bindTextures();
-		this.lightBlockRenderer.render();
-		// bunny
+		this.textureAndLightProgramInfo.setProjMatrix(this.projMatrix);
 		this.lightProgramInfo.use();
-		this.lightProgramInfo.setLightPoint(sunPoint);
-		this.bunnyRenderer.render();
-		// sphere
-		this.sphereRenderer.render();
+		this.lightProgramInfo.setProjMatrix(this.projMatrix);
 	}
 
 	processMovement() {
@@ -235,20 +222,45 @@ class App {
 		}
 	}
 
-	resizeHandler() {
-		this.canvas.width = window.innerWidth;
-		this.canvas.height = window.innerHeight;
-		this.gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-		mat4.perspective(this.projMatrix, glMatrix.toRadian(45), window.innerWidth / window.innerHeight, 1.0, 5000.0);
+	updateState() {
+		let sunRotx = (performance.now()/1333) % this.TAU;
+		let sunRoty = (performance.now()/917) % this.TAU;
+		let sunRotz = (performance.now()/577) % this.TAU;
+		let sunPoint = [Math.sin(sunRotx)*15.0, Math.sin(sunRoty)*15.0, Math.sin(sunRotz)*15.0];
+
 		this.textureAndLightProgramInfo.use();
-		this.textureAndLightProgramInfo.setProjMatrix(this.projMatrix);
+		this.textureAndLightProgramInfo.setLightPoint(sunPoint);
+
 		this.lightProgramInfo.use();
-		this.lightProgramInfo.setProjMatrix(this.projMatrix);
+		this.lightProgramInfo.setLightPoint(sunPoint);
+
+		this.lightBlock.updateVertexData(...sunPoint);
+	}
+
+	render() {
+		this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
+
+		this.textureAndLightProgramInfo.use();
+		// Blocks
+		this.blockRenderer.bindTextures();
+		this.blockRenderer.render();
+		// Light
+		this.lightBlockRenderer.checkUpdates();
+		this.lightBlockRenderer.bindTextures();
+		this.lightBlockRenderer.render();
+
+
+		this.lightProgramInfo.use();
+		// bunny
+		this.bunnyRenderer.render();
+		// sphere
+		this.sphereRenderer.render();
 	}
 
 	gameLoop() {
 		requestAnimationFrame(() => this.gameLoop());
 		this.processMovement();
+		this.updateState();
 		this.render();
 	}
 }

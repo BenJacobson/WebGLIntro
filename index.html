@@ -32,19 +32,18 @@
 	<script type="text/javascript" src="engine/renderer.js"></script>
 	<script type="text/javascript" src="engine/programInfo.js"></script>
 
-	<script type="text/javascript" src="mesh/armadillo/armadillo.js"></script>
-	<script type="text/javascript" src="mesh/sphere/sphere.js"></script>
-	<script type="text/javascript" src="mesh/block/block.js"></script>
-	<script type="text/javascript" src="mesh/bunny/bunny.js"></script>
+	<script type="text/javascript" src="light/mesh/sphere/sphere.js"></script>
+	<script type="text/javascript" src="light/mesh/bunny/bunny.js"></script>
+	<script type="text/javascript" src="textureAndLight/mesh/block/block.js"></script>
 	
-	<script type="text/javascript" src="lightProgramInfo.js"></script>
-	<script type="text/javascript" src="textureAndLightProgramInfo.js"></script>
-	<script type="text/javascript" src="blockRenderer.js"></script>
-	<script type="text/javascript" src="lightRenderer.js"></script>
+	<script type="text/javascript" src="light/lightProgramInfo.js"></script>
+	<script type="text/javascript" src="light/lightRenderer.js"></script>
+	<script type="text/javascript" src="textureAndLight/textureAndLightProgramInfo.js"></script>
+	<script type="text/javascript" src="textureAndLight/blockRenderer.js"></script>
 	<script type="text/javascript" src="app.js"></script>
 	<!-- Textures -->
-	<img id="block-texture" src="mesh/block/block.jpg" />
-	<img id="light-texture" src="mesh/block/light.jpg" />
+	<img id="block-texture" src="textureAndLight/mesh/block/block.jpg" />
+	<img id="light-texture" src="textureAndLight/mesh/block/light.jpg" />
 </head>
 
 <body onload="app.start()">
