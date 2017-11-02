@@ -80,51 +80,20 @@ class App {
 			let z = Math.floor(Math.random()*1000) - 500;
 			blockMeshes.push(new Block(x, y, z));
 		}
-		this.blockMeshSet = new MeshSet(this.gl, blockMeshes, this.textureAndLightProgramInfo,
-			[
-				new GLSLAttribute('vertexData', 'vertexData', 'vertexComponents'),
-				new GLSLAttribute('normalData', 'normalData', 'normalComponents'),
-				new GLSLAttribute('textureCoords', 'textureCoords', 'textureComponents'),
-			],
-			[
-				'block-texture'
-			]
-		);
 
 		this.lightBlock = new Block(0, 0, 0);
 		let lightMeshes = [this.lightBlock];
-		this.lightMeshSet = new MeshSet(this.gl, lightMeshes, this.textureAndLightProgramInfo,
-			[
-				new GLSLAttribute('vertexData', 'vertexData', 'vertexComponents'),
-				new GLSLAttribute('normalData', 'normalData', 'normalComponents'),
-				new GLSLAttribute('textureCoords', 'textureCoords', 'textureComponents'),
-			],
-			[
-				'light-texture'
-			]
-		);
 
 		this.blockRenderer = new BlockRenderer(this.textureAndLightProgramInfo, blockMeshes, ['block-texture']);
-		this.lightRenderer = new BlockRenderer(this.textureAndLightProgramInfo, lightMeshes, ['light-texture']);
+		this.lightBlockRenderer = new BlockRenderer(this.textureAndLightProgramInfo, lightMeshes, ['light-texture']);
 
 		this.lightProgramInfo = new LightProgramInfo(this.gl, this.assetMap.get(this.lightVert), this.assetMap.get(this.lightFrag));
+		
 		let bunnyMeshes = [new Bunny(0, 10, 0)];
-		this.bunnyMeshSet = new MeshSet(this.gl, bunnyMeshes, this.lightProgramInfo,
-			[
-				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
-				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
-			],
-			[]
-		);
-
 		let sphereMeshes = [new Sphere(20, -10, 0, 0), new Sphere(20, 0, 0, 0), new Sphere(20, 10, 0, 0)];
-		this.sphereMeshSet = new MeshSet(this.gl, sphereMeshes, this.lightProgramInfo,
-			[
-				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
-				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
-			],
-			[]
-		);
+		
+		this.bunnyRenderer = new LightRenderer(this.lightProgramInfo, bunnyMeshes);
+		this.sphereRenderer = new LightRenderer(this.lightProgramInfo, sphereMeshes);
 
 		mat4.identity(this.viewMatrix);
 		mat4.perspective(this.projMatrix, glMatrix.toRadian(45), this.canvas.clientWidth / this.canvas.clientHeight, 1.0, 5000.0);
@@ -187,29 +156,20 @@ class App {
 		let sunPoint = [Math.sin(sunRotx)*15.0, Math.sin(sunRoty)*15.0, Math.sin(sunRotz)*15.0];
 		this.textureAndLightProgramInfo.use();
 		// Blocks
-		// this.gl.bindVertexArray(this.blockMeshSet.vao);
 		this.textureAndLightProgramInfo.setLightPoint(sunPoint);
-		// this.blockMeshSet.bindTextures();
-		// this.blockMeshSet.draw();
 		this.blockRenderer.bindTextures();
 		this.blockRenderer.render();
 		// Light
-		this.gl.bindVertexArray(this.lightMeshSet.vao);
-		// this.lightMeshSet.updateVertexData([new Block(...sunPoint)]);
-		// this.lightMeshSet.bindTextures();
-		// this.lightMeshSet.draw();
 		this.lightBlock.updateVertexData(...sunPoint);
-		this.lightRenderer.checkUpdates();
-		this.lightRenderer.bindTextures();
-		this.lightRenderer.render();
-		// // bunny
+		this.lightBlockRenderer.checkUpdates();
+		this.lightBlockRenderer.bindTextures();
+		this.lightBlockRenderer.render();
+		// bunny
 		this.lightProgramInfo.use();
 		this.lightProgramInfo.setLightPoint(sunPoint);
-		this.gl.bindVertexArray(this.bunnyMeshSet.vao);
-		this.bunnyMeshSet.draw();
+		this.bunnyRenderer.render();
 		// sphere
-		this.gl.bindVertexArray(this.sphereMeshSet.vao);
-		this.sphereMeshSet.draw();
+		this.sphereRenderer.render();
 	}
 
 	processMovement() {
