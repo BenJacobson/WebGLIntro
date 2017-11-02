@@ -39,4 +39,13 @@ class ProgramInfo {
 	use() {
 		this.gl.useProgram(this.program);
 	}
+
+	getUniformLocation(name) {
+		return this.gl.getUniformLocation(this.program, name);
+	}
+
+	getAttribLocation(name) {
+		return this.gl.getAttribLocation(this.program, name);
+	}
+
 }

@@ -7,15 +7,15 @@ class TextureAndLightProgramInfo extends ProgramInfo {
 
 	setLocations() {
 		// uniforms
-		this.mViewLocation = this.gl.getUniformLocation(this.program, 'mView');
-		this.mProjLocation = this.gl.getUniformLocation(this.program, 'mProj');
-		this.lightPointLocation = this.gl.getUniformLocation(this.program, 'lightPoint');
-		this.textureSamplerLocation = this.gl.getUniformLocation(this.program, 'textureSampler');
+		this.mViewLocation = this.getUniformLocation('mView');
+		this.mProjLocation = this.getUniformLocation('mProj');
+		this.lightPointLocation = this.getUniformLocation('lightPoint');
+		this.textureSamplerLocation = this.getUniformLocation('textureSampler');
 
 		// attributes
-		this.vertCoordLocation = this.gl.getAttribLocation(this.program, 'vertCoord');
-		this.normalLocation = this.gl.getAttribLocation(this.program, 'normal');
-		this.texturePointLocation = this.gl.getAttribLocation(this.program, 'texturePoint');
+		this.vertCoordLocation = this.getAttribLocation('vertCoord');
+		this.normalLocation = this.getAttribLocation('normal');
+		this.texturePointLocation = this.getAttribLocation('texturePoint');
 	}
 
 	setViewMatrix(viewMatrix) {

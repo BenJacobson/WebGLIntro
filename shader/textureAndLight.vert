@@ -2,20 +2,20 @@
 
 precision highp float;
 
-in vec3 vertCoord;
-in vec3 normal;
-in vec2 texturePoint;
+in vec3 vertexData;
+in vec3 normalData;
+in vec2 textureCoords;
 
 out vec3 fragCoord;
 out vec3 fragNormal;
-out vec2 fragTexturePoint;
+out vec2 fragTextureCoords;
 
 uniform mat4 mView;
 uniform mat4 mProj;
 
 void main(void) {
-	fragTexturePoint = texturePoint;
-	fragCoord = vertCoord;
-	fragNormal = normal;
-	gl_Position = mProj * mView * vec4(vertCoord, 1.0);
+    fragCoord = vertexData;
+    fragNormal = normalData;
+	fragTextureCoords = textureCoords;
+	gl_Position = mProj * mView * vec4(vertexData, 1.0);
 }

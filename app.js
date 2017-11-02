@@ -43,7 +43,143 @@ class App {
 		this.assetsLoaded.then(() => this.init());
 	}
 
-	draw() {
+	init() {
+		this.canvas = document.getElementById('glCanvas');
+		this.gl = this.canvas.getContext('webgl2');
+
+		if (!this.gl) {
+			alert('Your browser does not support WebGL2');
+			return;
+		}
+
+		this.initWebGLSettings();
+
+		this.initScene();
+
+		this.initEvents();
+
+		this.resizeHandler();
+
+		requestAnimationFrame(() => this.gameLoop());
+	}
+
+	initWebGLSettings() {
+		// gl.clearColor(0.8, 0.9, 1.0, 1.0); // light blue
+		this.gl.clearColor(0.0, 0.0, 0.0, 1.0); // black
+		this.gl.enable(this.gl.DEPTH_TEST);
+		this.gl.depthFunc(this.gl.LEQUAL);
+	}
+
+	initScene() {
+		this.textureAndLightProgramInfo = new TextureAndLightProgramInfo(this.gl, this.assetMap.get(this.textureAndLightVert), this.assetMap.get(this.textureAndLightFrag));
+
+		let blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
+		for (let i = 0; i < 1000; i++) {
+			let x = Math.floor(Math.random()*1000) - 500;
+			let y = -2.55;
+			let z = Math.floor(Math.random()*1000) - 500;
+			blockMeshes.push(new Block(x, y, z));
+		}
+		this.blockMeshSet = new MeshSet(this.gl, blockMeshes, this.textureAndLightProgramInfo,
+			[
+				new GLSLAttribute('vertexData', 'vertexData', 'vertexComponents'),
+				new GLSLAttribute('normalData', 'normalData', 'normalComponents'),
+				new GLSLAttribute('textureCoords', 'textureCoords', 'textureComponents'),
+			],
+			[
+				'block-texture'
+			]
+		);
+
+		this.lightBlock = new Block(0, 0, 0);
+		let lightMeshes = [this.lightBlock];
+		this.lightMeshSet = new MeshSet(this.gl, lightMeshes, this.textureAndLightProgramInfo,
+			[
+				new GLSLAttribute('vertexData', 'vertexData', 'vertexComponents'),
+				new GLSLAttribute('normalData', 'normalData', 'normalComponents'),
+				new GLSLAttribute('textureCoords', 'textureCoords', 'textureComponents'),
+			],
+			[
+				'light-texture'
+			]
+		);
+
+		this.blockRenderer = new BlockRenderer(this.textureAndLightProgramInfo, blockMeshes, ['block-texture']);
+		this.lightRenderer = new BlockRenderer(this.textureAndLightProgramInfo, lightMeshes, ['light-texture']);
+
+		this.lightProgramInfo = new LightProgramInfo(this.gl, this.assetMap.get(this.lightVert), this.assetMap.get(this.lightFrag));
+		let bunnyMeshes = [new Bunny(0, 10, 0)];
+		this.bunnyMeshSet = new MeshSet(this.gl, bunnyMeshes, this.lightProgramInfo,
+			[
+				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
+				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
+			],
+			[]
+		);
+
+		let sphereMeshes = [new Sphere(20, -10, 0, 0), new Sphere(20, 0, 0, 0), new Sphere(20, 10, 0, 0)];
+		this.sphereMeshSet = new MeshSet(this.gl, sphereMeshes, this.lightProgramInfo,
+			[
+				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
+				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
+			],
+			[]
+		);
+
+		mat4.identity(this.viewMatrix);
+		mat4.perspective(this.projMatrix, glMatrix.toRadian(45), this.canvas.clientWidth / this.canvas.clientHeight, 1.0, 5000.0);
+
+		this.textureAndLightProgramInfo.use();
+		this.textureAndLightProgramInfo.setViewMatrix(this.viewMatrix);
+		this.textureAndLightProgramInfo.setProjMatrix(this.projMatrix);
+		this.lightProgramInfo.use();
+		this.lightProgramInfo.setViewMatrix(this.viewMatrix);
+		this.lightProgramInfo.setProjMatrix(this.projMatrix);
+	}
+
+	initEvents() {
+		//
+		// resize handler
+		//
+		document.body.onresize = () => this.resizeHandler();
+
+		//
+		// key handler
+		//
+		document.body.onkeydown = (event) => {
+			this.keysPressed[event.key] = performance.now();
+		};
+
+		document.body.onkeyup = (event) => {
+			this.keysPressed[event.key] = undefined;
+		};
+
+		//
+		// mouse handler
+		//
+		document.body.onmousemove = (event) => {
+			this.mouseX = 2 * this.rotateSpeed * event.clientY / this.canvas.clientHeight - this.rotateSpeed;
+			this.mouseY = 2 * this.rotateSpeed * event.clientX / this.canvas.clientWidth - this.rotateSpeed;
+			this.mouseX = 10 * Math.abs(this.mouseX) * this.mouseX;
+			if (Math.abs(this.mouseY) < 0.0001) this.mouseY = 0;
+		};
+
+		//
+		// settings events
+		//
+		document.getElementById('mouseLook').addEventListener('change', function(e) {
+			this.mouseLook = e.target.checked;
+			if (!this.mouseLook) {
+				this.camara.rotx = 0;
+				this.camara.change = true;
+			}
+		});
+		document.getElementById('timeBased').addEventListener('change', function(e) {
+			this.timeBased = e.target.checked;
+		});
+	}
+
+	render() {
 		this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
 		let sunRotx = (performance.now()/1333) % this.TAU;
 		let sunRoty = (performance.now()/917) % this.TAU;
@@ -51,15 +187,21 @@ class App {
 		let sunPoint = [Math.sin(sunRotx)*15.0, Math.sin(sunRoty)*15.0, Math.sin(sunRotz)*15.0];
 		this.textureAndLightProgramInfo.use();
 		// Blocks
-		this.gl.bindVertexArray(this.blockMeshSet.vao);
+		// this.gl.bindVertexArray(this.blockMeshSet.vao);
 		this.textureAndLightProgramInfo.setLightPoint(sunPoint);
-		this.blockMeshSet.bindTextures();
-		this.blockMeshSet.draw();
+		// this.blockMeshSet.bindTextures();
+		// this.blockMeshSet.draw();
+		this.blockRenderer.bindTextures();
+		this.blockRenderer.render();
 		// Light
 		this.gl.bindVertexArray(this.lightMeshSet.vao);
-		this.lightMeshSet.updateVertexData([new Block(...sunPoint)]);
-		this.lightMeshSet.bindTextures();
-		this.lightMeshSet.draw();
+		// this.lightMeshSet.updateVertexData([new Block(...sunPoint)]);
+		// this.lightMeshSet.bindTextures();
+		// this.lightMeshSet.draw();
+		this.lightBlock.updateVertexData(...sunPoint);
+		this.lightRenderer.checkUpdates();
+		this.lightRenderer.bindTextures();
+		this.lightRenderer.render();
 		// // bunny
 		this.lightProgramInfo.use();
 		this.lightProgramInfo.setLightPoint(sunPoint);
@@ -144,131 +286,11 @@ class App {
 		this.lightProgramInfo.setProjMatrix(this.projMatrix);
 	}
 
-	init() {
-		this.canvas = document.getElementById('glCanvas');
-		this.gl = this.canvas.getContext('webgl2');
-
-		if (!this.gl) {
-			alert('Your browser does not support WebGL2');
-			return;
-		}
-
-		this.textureAndLightProgramInfo = new TextureAndLightProgramInfo(this.gl, this.assetMap.get(this.textureAndLightVert), this.assetMap.get(this.textureAndLightFrag));
-
-		let blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
-		for (let i = 0; i < 1000; i++) {
-			let x = Math.floor(Math.random()*1000) - 500;
-			let y = -2.55;
-			let z = Math.floor(Math.random()*1000) - 500;
-			blockMeshes.push(new Block(x, y, z));
-		}
-		this.blockMeshSet = new MeshSet(this.gl, blockMeshes, this.textureAndLightProgramInfo,
-			[
-				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
-				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
-				new GLSLAttribute('texturePoint', 'textureCoords', 'textureComponents'),
-			],
-			[
-				'block-texture'
-			]
-		);
-
-		let lightMeshes = [new Block(0, 0, 0, true)];
-		this.lightMeshSet = new MeshSet(this.gl, lightMeshes, this.textureAndLightProgramInfo,
-			[
-				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
-				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
-				new GLSLAttribute('texturePoint', 'textureCoords', 'textureComponents'),
-			],
-			[
-				'light-texture'
-			]
-		);
-
-
-		this.lightProgramInfo = new LightProgramInfo(this.gl, this.assetMap.get(this.lightVert), this.assetMap.get(this.lightFrag));
-		let bunnyMeshes = [new Bunny(0, 10, 0)];
-		this.bunnyMeshSet = new MeshSet(this.gl, bunnyMeshes, this.lightProgramInfo,
-			[
-				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
-				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
-			],
-			[]
-		);
-
-		let sphereMeshes = [new Sphere(20, -10, 0, 0), new Sphere(20, 0, 0, 0), new Sphere(20, 10, 0, 0)];
-		this.sphereMeshSet = new MeshSet(this.gl, sphereMeshes, this.lightProgramInfo,
-			[
-				new GLSLAttribute('vertCoord', 'vertexData', 'vertexComponents'),
-				new GLSLAttribute('normal', 'normalData', 'normalComponents'),
-			],
-			[]
-		);
-
-		// gl.clearColor(0.8, 0.9, 1.0, 1.0); // light blue
-		this.gl.clearColor(0.0, 0.0, 0.0, 1.0); // black
-		this.gl.enable(this.gl.DEPTH_TEST);
-		this.gl.depthFunc(this.gl.LEQUAL);
-
-		mat4.identity(this.viewMatrix);
-		mat4.perspective(this.projMatrix, glMatrix.toRadian(45), this.canvas.clientWidth / this.canvas.clientHeight, 1.0, 5000.0);
-
-		this.textureAndLightProgramInfo.use();
-		this.textureAndLightProgramInfo.setViewMatrix(this.viewMatrix);
-		this.textureAndLightProgramInfo.setProjMatrix(this.projMatrix);
-		this.lightProgramInfo.use();
-		this.lightProgramInfo.setViewMatrix(this.viewMatrix);
-		this.lightProgramInfo.setProjMatrix(this.projMatrix);
-
-		document.body.onresize = this.resizeHandler.bind(this);
-		this.resizeHandler();
-
-		//
-		// key handler
-		//
-		document.body.onkeydown = (event) => {
-			this.keysPressed[event.key] = performance.now();
-		};
-
-		document.body.onkeyup = (event) => {
-			this.keysPressed[event.key] = undefined;
-		};
-
-		//
-		// mouse handler
-		//
-		document.body.onmousemove = (event) => {
-			this.mouseX = 2 * this.rotateSpeed * event.clientY / this.canvas.clientHeight - this.rotateSpeed;
-			this.mouseY = 2 * this.rotateSpeed * event.clientX / this.canvas.clientWidth - this.rotateSpeed;
-			this.mouseX = 10 * Math.abs(this.mouseX) * this.mouseX;
-			if (Math.abs(this.mouseY) < 0.0001) this.mouseY = 0;
-		};
-		
-
-		//
-		// Main render loop
-		//
-		function loop() {
-			requestAnimationFrame(loop.bind(this));
-			this.processMovement();
-			this.draw();
-		}
-		requestAnimationFrame(loop.bind(this));
-
-		//
-		// settings events
-		//
-		document.getElementById('mouseLook').addEventListener('change', function(e) {
-			this.mouseLook = e.target.checked;
-			if (!this.mouseLook) {
-				this.camara.rotx = 0;
-				this.camara.change = true;
-			}
-		});
-		document.getElementById('timeBased').addEventListener('change', function(e) {
-			this.timeBased = e.target.checked;
-		});
+	gameLoop() {
+		requestAnimationFrame(() => this.gameLoop());
+		this.processMovement();
+		this.render();
 	}
 }
 
-let app = new App();
+const app = new App();

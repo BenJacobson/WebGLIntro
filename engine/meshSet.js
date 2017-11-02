@@ -41,7 +41,7 @@ function MeshSet(glContext, meshes, programInfo, attributes, textureIds) {
 		offset += p.vertexLength;
 		return ret;
 	}));
-	indexBuffer = this.gl.createBuffer();
+	const indexBuffer = this.gl.createBuffer();
 	this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 	this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indexData), this.gl.STATIC_DRAW);
 	this.gl.bindVertexArray(null);

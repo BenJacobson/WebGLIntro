@@ -1,13 +1,19 @@
 class Block {
 	constructor(x=0, y=0, z=0) {
 		this.vertexLength = 24;
-		this.vertexData = this.vertexData.map((v, i) => {
+		this.updateVertexData(x, y, z);
+		this.vertexDataUpdated = false;
+	}
+
+	updateVertexData(x, y, z) {
+		this.vertexData = Block.prototype.vertexData.map((v, i) => {
 			let offset = i % this.vertexComponents;
 			return v +
 				(offset == 0 ? x : 0) +
 				(offset == 1 ? y : 0) +
 				(offset == 2 ? z : 0);
 		});
+		this.vertexDataUpdated = true;
 	}
 }
 
