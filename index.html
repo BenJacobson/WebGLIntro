@@ -25,25 +25,31 @@
 	</style>
 
 	<!-- Sources -->
-	<script type="text/javascript" src="engine/request.js"></script>
-	<script type="text/javascript" src="engine/gl-matrix.js"></script>
-	<script type="text/javascript" src="engine/attribute.js"></script>
-	<script type="text/javascript" src="engine/camara.js"></script>
-	<script type="text/javascript" src="engine/renderer.js"></script>
-	<script type="text/javascript" src="engine/programInfo.js"></script>
+	<script type="text/javascript" src="Engine/request.js"></script>
+	<script type="text/javascript" src="Engine/gl-matrix.js"></script>
+	<script type="text/javascript" src="Engine/attribute.js"></script>
+	<script type="text/javascript" src="Engine/camara.js"></script>
+	<script type="text/javascript" src="Engine/renderer.js"></script>
+	<script type="text/javascript" src="Engine/programInfo.js"></script>
 
-	<script type="text/javascript" src="light/mesh/sphere/sphere.js"></script>
-	<script type="text/javascript" src="light/mesh/bunny/bunny.js"></script>
-	<script type="text/javascript" src="textureAndLight/mesh/block/block.js"></script>
+	<script type="text/javascript" src="Light/Mesh/Sphere/sphere.js"></script>
+	<script type="text/javascript" src="Light/Mesh/Bunny/bunny.js"></script>
+	<script type="text/javascript" src="TextureAndLight/Mesh/Block/block.js"></script>
 	
-	<script type="text/javascript" src="light/lightProgramInfo.js"></script>
-	<script type="text/javascript" src="light/lightRenderer.js"></script>
-	<script type="text/javascript" src="textureAndLight/textureAndLightProgramInfo.js"></script>
-	<script type="text/javascript" src="textureAndLight/blockRenderer.js"></script>
+	<script type="text/javascript" src="Light/LightProgramInfo.js"></script>
+	<script type="text/javascript" src="Light/LightRenderer.js"></script>
+	<script type="text/javascript" src="TextureAndLight/textureAndLightProgramInfo.js"></script>
+	<script type="text/javascript" src="TextureAndLight/blockRenderer.js"></script>
+
+	<script type="text/javascript" src="SkyBox/Mesh/SkyBox/skyBox.js"></script>
+	<script type="text/javascript" src="SkyBox/skyBoxRenderer.js"></script>
+	<script type="text/javascript" src="SkyBox/skyBoxProgramInfo.js"></script>
+
+
 	<script type="text/javascript" src="app.js"></script>
 	<!-- Textures -->
-	<img id="block-texture" src="textureAndLight/mesh/block/block.jpg" />
-	<img id="light-texture" src="textureAndLight/mesh/block/light.jpg" />
+	<img id="block-texture" src="TextureAndLight/Mesh/Block/block.jpg" />
+	<img id="light-texture" src="TextureAndLight/Mesh/Block/light.jpg" />
 </head>
 
 <body onload="app.start()">

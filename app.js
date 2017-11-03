@@ -20,11 +20,17 @@ class App {
 
 	loadAssets() {
 		// Identify assets
-		this.textureAndLightVert = 'textureAndLight/shader/textureAndLight.vert';
-		this.textureAndLightFrag = 'textureAndLight/shader/textureAndLight.frag';
-		this.lightVert = 'light/shader/light.vert';
-		this.lightFrag = 'light/shader/light.frag';
-		let assetNames = [this.textureAndLightVert, this.textureAndLightFrag, this.lightVert, this.lightFrag];
+		this.textureAndLightVert = 'TextureAndLight/Shader/textureAndLight.vert';
+		this.textureAndLightFrag = 'TextureAndLight/Shader/textureAndLight.frag';
+		this.lightVert = 'Light/Shader/light.vert';
+		this.lightFrag = 'Light/Shader/light.frag';
+		this.skyBoxVert = 'SkyBox/Shader/skyBox.vert';
+		this.skyBoxFrag = 'SkyBox/Shader/skyBox.frag';
+		let assetNames = [
+			this.textureAndLightVert, this.textureAndLightFrag,
+			this.lightVert, this.lightFrag,
+			this.skyBoxVert, this.skyBoxFrag,
+		];
 		// Load shaders
 		let assetPromises = assetNames.map(assetName => Request.makeRequest(assetName));
 		this.assetsLoaded = Promise.all(assetPromises).then(function(assetSources) {
@@ -73,27 +79,25 @@ class App {
 	initScene() {
 		this.textureAndLightProgramInfo = new TextureAndLightProgramInfo(this.gl, this.assetMap.get(this.textureAndLightVert), this.assetMap.get(this.textureAndLightFrag));
 
-		let blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
+		const blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
 		for (let i = 0; i < 1000; i++) {
 			let x = Math.floor(Math.random()*1000) - 500;
 			let y = -2.55;
 			let z = Math.floor(Math.random()*1000) - 500;
 			blockMeshes.push(new Block(x, y, z));
 		}
+		this.blockRenderer = new BlockRenderer(this.textureAndLightProgramInfo, blockMeshes, ['block-texture']);
 
 		this.lightBlock = new Block(0, 0, 0);
-		let lightMeshes = [this.lightBlock];
-
-		this.blockRenderer = new BlockRenderer(this.textureAndLightProgramInfo, blockMeshes, ['block-texture']);
+		const lightMeshes = [this.lightBlock];
 		this.lightBlockRenderer = new BlockRenderer(this.textureAndLightProgramInfo, lightMeshes, ['light-texture']);
 
 		this.lightProgramInfo = new LightProgramInfo(this.gl, this.assetMap.get(this.lightVert), this.assetMap.get(this.lightFrag));
-		
-		let bunnyMeshes = [new Bunny(0, 10, 0)];
-		let sphereMeshes = [new Sphere(20, -10, 0, 0), new Sphere(20, 0, 0, 0), new Sphere(20, 10, 0, 0)];
-		
-		this.bunnyRenderer = new LightRenderer(this.lightProgramInfo, bunnyMeshes);
-		this.sphereRenderer = new LightRenderer(this.lightProgramInfo, sphereMeshes);
+		const lightEntities = [new Bunny(0, 10, 0), new Sphere(20, -10, 0, 0), new Sphere(20, 0, 0, 0), new Sphere(20, 10, 0, 0)];
+		this.lightRenderer = new LightRenderer(this.lightProgramInfo, lightEntities);
+
+		this.skyBoxProgramInfo = new SkyBoxProgramInfo(this.gl, this.assetMap.get(this.skyBoxVert), this.assetMap.get(this.skyBoxFrag));
+		this.skyBoxRenderer = new SkyBoxRenderer(this.skyBoxProgramInfo);
 
 		mat4.identity(this.viewMatrix);
 		mat4.perspective(this.projMatrix, glMatrix.toRadian(45), this.canvas.clientWidth / this.canvas.clientHeight, 1.0, 5000.0);
@@ -104,6 +108,9 @@ class App {
 		this.lightProgramInfo.use();
 		this.lightProgramInfo.setViewMatrix(this.viewMatrix);
 		this.lightProgramInfo.setProjMatrix(this.projMatrix);
+		this.skyBoxProgramInfo.use();
+		this.skyBoxProgramInfo.setViewMatrix(this.viewMatrix);
+		this.skyBoxProgramInfo.setProjMatrix(this.projMatrix);
 	}
 
 	initEvents() {
@@ -157,6 +164,8 @@ class App {
 		this.textureAndLightProgramInfo.setProjMatrix(this.projMatrix);
 		this.lightProgramInfo.use();
 		this.lightProgramInfo.setProjMatrix(this.projMatrix);
+		this.skyBoxProgramInfo.use();
+		this.skyBoxProgramInfo.setProjMatrix(this.projMatrix);
 	}
 
 	processMovement() {
@@ -218,6 +227,8 @@ class App {
 			this.textureAndLightProgramInfo.setViewMatrix(this.viewMatrix);
 			this.lightProgramInfo.use();
 			this.lightProgramInfo.setViewMatrix(this.viewMatrix);
+			this.skyBoxProgramInfo.use();
+			this.skyBoxProgramInfo.setViewMatrix(this.viewMatrix);
 			this.camara.change = false;
 		}
 	}
@@ -249,12 +260,11 @@ class App {
 		this.lightBlockRenderer.bindTextures();
 		this.lightBlockRenderer.render();
 
-
 		this.lightProgramInfo.use();
-		// bunny
-		this.bunnyRenderer.render();
-		// sphere
-		this.sphereRenderer.render();
+		this.lightRenderer.render();
+
+		this.skyBoxProgramInfo.use();
+		this.skyBoxRenderer.render();
 	}
 
 	gameLoop() {

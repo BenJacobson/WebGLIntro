@@ -18,6 +18,10 @@ class Camara {
 		return [this.x, this.y, this.z];
 	}
 
+	getInvLocation() {
+		return [-this.x, -this.y, -this.z];
+	}
+
 	move(vector) {
 		let [dx, dy, dz] = vector;
 		this.x += dx;

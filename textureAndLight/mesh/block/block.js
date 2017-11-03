@@ -1,6 +1,7 @@
 class Block {
 	constructor(x=0, y=0, z=0) {
 		this.vertexLength = 24;
+		this.vertexComponents = 3;
 		this.updateVertexData(x, y, z);
 		this.vertexDataUpdated = false;
 	}
@@ -17,7 +18,6 @@ class Block {
 	}
 }
 
-Block.prototype.normalComponents = 3;
 Block.prototype.normalData = [
 	0.0, 1.0, 0.0,
 	0.0, 1.0, 0.0,
@@ -50,7 +50,6 @@ Block.prototype.normalData = [
 	0.0, -1.0, 0.0,
 ];
 
-Block.prototype.textureComponents = 2;
 Block.prototype.textureCoords = [
 	0.0, 0.0,
 	0.0, 1.0,
@@ -83,7 +82,6 @@ Block.prototype.textureCoords = [
 	0.0, 1.0,
 ];
 
-Block.prototype.vertexComponents = 3;
 Block.prototype.vertexData = [
 	// Top
 	-1.0, 1.0, -1.0,
@@ -122,7 +120,6 @@ Block.prototype.vertexData = [
 	1.0, -1.0, -1.0,
 ];
 
-Block.prototype.indexComponents = 3;
 Block.prototype.indexData =
 [
 	// Top
