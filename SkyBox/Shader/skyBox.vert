@@ -3,14 +3,13 @@
 precision mediump float;
 
 in vec3 vertexData;
-in vec3 colorData;
 
-out vec3 fragColor;
+out float y;
 
 uniform mat4 mView;
 uniform mat4 mProj;
 
 void main(void) {
-    fragColor = colorData;
+    y = vertexData.y;
     gl_Position = mProj * mView * vec4(vertexData, 1.0);
 }

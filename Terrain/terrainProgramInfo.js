@@ -1,4 +1,4 @@
-class SkyBoxProgramInfo extends ProgramInfo {
+class TerrainProgramInfo extends ProgramInfo {
 
     constructor(glContext, vertexShaderSource, fragmentShaderSource) {
         super(glContext, vertexShaderSource, fragmentShaderSource);
@@ -9,19 +9,21 @@ class SkyBoxProgramInfo extends ProgramInfo {
         // uniforms
         this.mViewLocation = this.getUniformLocation('mView');
         this.mProjLocation = this.getUniformLocation('mProj');
+        this.radiusLocation = this.getUniformLocation('radius');
 
         // attributes
-        this.vertexLocation = this.getAttribLocation('vertexData');
+        this.vertexDataLocation = this.getAttribLocation('vertexData');
     }
 
     setViewMatrix(viewMatrix) {
-        const viewMatrixNoTranslation = viewMatrix.map((cell, i) => {
-            return i < 12 ? cell : i % 4 == 3 ? 1 : 0;
-        });
-        this.gl.uniformMatrix4fv(this.mViewLocation, this.gl.FALSE, viewMatrixNoTranslation);
+        this.gl.uniformMatrix4fv(this.mViewLocation, this.gl.FALSE, viewMatrix);
     }
 
     setProjMatrix(projMatrix) {
         this.gl.uniformMatrix4fv(this.mProjLocation, this.gl.FALSE, projMatrix);
+    }
+
+    setRadius(radius) {
+        this.gl.uniform1f(this.radiusLocation, radius);
     }
 }

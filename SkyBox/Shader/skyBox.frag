@@ -2,10 +2,12 @@
 
 precision mediump float;
 
-in vec3 fragColor;
+in float y;
 
 out vec4 outColor;
 
 void main(void) {
-    outColor = vec4(fragColor, 0.5);
+    float height = clamp(y, -200.0, 300.0);
+    float a = (height + 200.0) / 500.0;
+    outColor = mix(vec4(0.99, 0.75, 0.14, 1.0), vec4(0.5, 0.75, 0.9, 1.0), a);
 }

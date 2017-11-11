@@ -26,10 +26,13 @@ class App {
 		this.lightFrag = 'Light/Shader/light.frag';
 		this.skyBoxVert = 'SkyBox/Shader/skyBox.vert';
 		this.skyBoxFrag = 'SkyBox/Shader/skyBox.frag';
+		this.terrainVert = 'Terrain/Shader/terrain.vert';
+		this.terrainFrag = 'Terrain/Shader/terrain.frag';
 		let assetNames = [
 			this.textureAndLightVert, this.textureAndLightFrag,
 			this.lightVert, this.lightFrag,
 			this.skyBoxVert, this.skyBoxFrag,
+			this.terrainVert, this.terrainFrag,
 		];
 		// Load shaders
 		let assetPromises = assetNames.map(assetName => Request.makeRequest(assetName));
@@ -99,18 +102,14 @@ class App {
 		this.skyBoxProgramInfo = new SkyBoxProgramInfo(this.gl, this.assetMap.get(this.skyBoxVert), this.assetMap.get(this.skyBoxFrag));
 		this.skyBoxRenderer = new SkyBoxRenderer(this.skyBoxProgramInfo);
 
+		this.terrainProgramInfo = new TerrainProgramInfo(this.gl, this.assetMap.get(this.terrainVert), this.assetMap.get(this.terrainFrag));
+		this.terrainRenderer = new TerrainRenderer(this.terrainProgramInfo);
+
 		mat4.identity(this.viewMatrix);
 		mat4.perspective(this.projMatrix, glMatrix.toRadian(45), this.canvas.clientWidth / this.canvas.clientHeight, 1.0, 5000.0);
 
-		this.textureAndLightProgramInfo.use();
-		this.textureAndLightProgramInfo.setViewMatrix(this.viewMatrix);
-		this.textureAndLightProgramInfo.setProjMatrix(this.projMatrix);
-		this.lightProgramInfo.use();
-		this.lightProgramInfo.setViewMatrix(this.viewMatrix);
-		this.lightProgramInfo.setProjMatrix(this.projMatrix);
-		this.skyBoxProgramInfo.use();
-		this.skyBoxProgramInfo.setViewMatrix(this.viewMatrix);
-		this.skyBoxProgramInfo.setProjMatrix(this.projMatrix);
+		this.setViewMatrix();
+		this.setProjMatrix();
 	}
 
 	initEvents() {
@@ -160,12 +159,29 @@ class App {
 		this.canvas.height = window.innerHeight;
 		this.gl.viewport(0, 0, window.innerWidth, window.innerHeight);
 		mat4.perspective(this.projMatrix, glMatrix.toRadian(45), window.innerWidth / window.innerHeight, 1.0, 5000.0);
+		this.setProjMatrix();
+	}
+
+	setProjMatrix() {
 		this.textureAndLightProgramInfo.use();
 		this.textureAndLightProgramInfo.setProjMatrix(this.projMatrix);
 		this.lightProgramInfo.use();
 		this.lightProgramInfo.setProjMatrix(this.projMatrix);
 		this.skyBoxProgramInfo.use();
 		this.skyBoxProgramInfo.setProjMatrix(this.projMatrix);
+		this.terrainProgramInfo.use();
+		this.terrainProgramInfo.setProjMatrix(this.projMatrix);
+	}
+
+	setViewMatrix() {
+		this.textureAndLightProgramInfo.use();
+		this.textureAndLightProgramInfo.setViewMatrix(this.viewMatrix);
+		this.lightProgramInfo.use();
+		this.lightProgramInfo.setViewMatrix(this.viewMatrix);
+		this.skyBoxProgramInfo.use();
+		this.skyBoxProgramInfo.setViewMatrix(this.viewMatrix);
+		this.terrainProgramInfo.use();
+		this.terrainProgramInfo.setViewMatrix(this.viewMatrix);
 	}
 
 	processMovement() {
@@ -223,12 +239,7 @@ class App {
 			mat4.rotateX(this.viewMatrix, this.viewMatrix, this.camara.rotx);
 			mat4.rotateY(this.viewMatrix, this.viewMatrix, this.camara.roty);
 			mat4.translate(this.viewMatrix, this.viewMatrix, this.camara.getLocation());
-			this.textureAndLightProgramInfo.use();
-			this.textureAndLightProgramInfo.setViewMatrix(this.viewMatrix);
-			this.lightProgramInfo.use();
-			this.lightProgramInfo.setViewMatrix(this.viewMatrix);
-			this.skyBoxProgramInfo.use();
-			this.skyBoxProgramInfo.setViewMatrix(this.viewMatrix);
+			this.setViewMatrix();
 			this.camara.change = false;
 		}
 	}
@@ -252,10 +263,8 @@ class App {
 		this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
 
 		this.textureAndLightProgramInfo.use();
-		// Blocks
 		this.blockRenderer.bindTextures();
 		this.blockRenderer.render();
-		// Light
 		this.lightBlockRenderer.checkUpdates();
 		this.lightBlockRenderer.bindTextures();
 		this.lightBlockRenderer.render();
@@ -265,6 +274,9 @@ class App {
 
 		this.skyBoxProgramInfo.use();
 		this.skyBoxRenderer.render();
+
+		this.terrainProgramInfo.use();
+		this.terrainRenderer.render();
 	}
 
 	gameLoop() {

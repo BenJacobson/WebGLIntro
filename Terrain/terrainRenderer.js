@@ -1,13 +1,16 @@
-class SkyBoxRenderer extends Renderer {
+class TerrainRenderer extends Renderer {
 
     constructor(programInfo) {
-        super(programInfo, [new SkyBox(30, 1000)], []);
+        super(programInfo, [new Terrain()], []);
 
         this.attributes = [
-            new Attribute('vertexData', 3, this.gl.ARRAY_BUFFER, this.gl.STATIC_DRAW),
+            new Attribute('vertexData', 2, this.gl.ARRAY_BUFFER, this.gl.STATIC_DRAW),
         ];
         this.initAttributes();
         this.initIndexData();
+        
+        this.programInfo.use();
+        this.programInfo.setRadius(Terrain.prototype.radius);
     }
 
     render() {
