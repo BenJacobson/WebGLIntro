@@ -31,6 +31,10 @@ class Renderer {
                 0*Float32Array.BYTES_PER_ELEMENT
             );
             this.gl.enableVertexAttribArray(attribute.location);
+
+            if (attribute.name.includes('vertexData')) {
+                this.vertexAttribute = attribute;
+            }
         });
     }
 
@@ -76,8 +80,7 @@ class Renderer {
     checkUpdates() {
         this.entities.forEach((entity, i) => {
             if (entity.vertexDataUpdated) {
-                const vertexAttribute = this.attributes.find(attribute => attribute.name.includes('vertexData'));
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexAttribute.buffer);
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexAttribute.buffer);
                 this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, new Float32Array(entity.vertexData));
                 entity.vertexDataUpdated = false;
             }

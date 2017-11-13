@@ -1,4 +1,4 @@
-class Camara {
+class FirstPersonCamara {
 
 	static get TAU() {
 		return Math.PI * 2;

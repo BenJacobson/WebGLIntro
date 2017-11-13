@@ -1,6 +1,6 @@
 class App {
 	constructor() {
-		this.camara = new Camara(0, 0, -50, 0, 0);
+		this.camara = new ThirdPersonCamara(0, 0, -50, 0, 0);
 		this.keysPressed = {};
 		this.mouseX = 0;
 		this.mouseY = 0;
@@ -28,21 +28,24 @@ class App {
 		this.skyBoxFrag = 'SkyBox/Shader/skyBox.frag';
 		this.terrainVert = 'Terrain/Shader/terrain.vert';
 		this.terrainFrag = 'Terrain/Shader/terrain.frag';
-		let assetNames = [
+		this.playerVert = 'Player/Shader/player.vert';
+		this.playerFrag = 'Player/Shader/player.frag';
+		const assetNames = [
 			this.textureAndLightVert, this.textureAndLightFrag,
 			this.lightVert, this.lightFrag,
 			this.skyBoxVert, this.skyBoxFrag,
 			this.terrainVert, this.terrainFrag,
+			this.playerVert, this.playerFrag,
 		];
 		// Load shaders
-		let assetPromises = assetNames.map(assetName => Request.makeRequest(assetName));
-		this.assetsLoaded = Promise.all(assetPromises).then(function(assetSources) {
+		const assetPromises = assetNames.map(assetName => Request.makeRequest(assetName));
+		this.assetsLoaded = Promise.all(assetPromises).then(assetSources => {
 			this.assetMap = new Map(
 				assetNames.map((asset, index) => {
 					return [asset, assetSources[index]];
 				})
 			);
-		}.bind(this));
+		});
 		this.assetsLoaded.catch(err => {
 			console.error('failed to load assets', err);
 		});
@@ -84,9 +87,9 @@ class App {
 
 		const blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
 		for (let i = 0; i < 1000; i++) {
-			let x = Math.floor(Math.random()*1000) - 500;
-			let y = -2.55;
-			let z = Math.floor(Math.random()*1000) - 500;
+			const x = Math.floor(Math.random()*1000) - 500;
+			const y = -2.55;
+			const z = Math.floor(Math.random()*1000) - 500;
 			blockMeshes.push(new Block(x, y, z));
 		}
 		this.blockRenderer = new BlockRenderer(this.textureAndLightProgramInfo, blockMeshes, ['block-texture']);
@@ -104,6 +107,10 @@ class App {
 
 		this.terrainProgramInfo = new TerrainProgramInfo(this.gl, this.assetMap.get(this.terrainVert), this.assetMap.get(this.terrainFrag));
 		this.terrainRenderer = new TerrainRenderer(this.terrainProgramInfo);
+
+		this.playerProgramInfo = new PlayerProgramInfo(this.gl, this.assetMap.get(this.playerVert), this.assetMap.get(this.playerFrag));
+		this.player = new Player();
+		this.playerRenderer = new PlayerRenderer(this.playerProgramInfo, this.player);
 
 		mat4.identity(this.viewMatrix);
 		mat4.perspective(this.projMatrix, glMatrix.toRadian(45), this.canvas.clientWidth / this.canvas.clientHeight, 1.0, 5000.0);
@@ -171,6 +178,8 @@ class App {
 		this.skyBoxProgramInfo.setProjMatrix(this.projMatrix);
 		this.terrainProgramInfo.use();
 		this.terrainProgramInfo.setProjMatrix(this.projMatrix);
+		this.playerProgramInfo.use();
+		this.playerProgramInfo.setProjMatrix(this.projMatrix);
 	}
 
 	setViewMatrix() {
@@ -182,49 +191,52 @@ class App {
 		this.skyBoxProgramInfo.setViewMatrix(this.viewMatrix);
 		this.terrainProgramInfo.use();
 		this.terrainProgramInfo.setViewMatrix(this.viewMatrix);
+		this.playerProgramInfo.use();
+		this.playerProgramInfo.setViewMatrix(this.viewMatrix);
 	}
 
 	processMovement() {
-		let now = performance.now();
+		const now = performance.now();
+
+		const getTranslateSpeed = key => {
+			const speed = (now - this.keysPressed[key]) / this.translateFactor;
+			this.keysPressed[key] = now;
+			return this.timeBased ? speed : this.translateSpeed;
+		};
+
+		const getRotateSpeed = key => {
+			const speed = (now - this.keysPressed[key]) / this.rotateFactor;
+			this.keysPressed[key] = now;
+			return this.timeBased ? speed : this.rotateSpeed;
+		};
+
 		if (this.keysPressed['w']) {
-			let speed =  (now - this.keysPressed['w']) / this.translateFactor;
-			this.keysPressed['w'] = now;
-			this.camara.moveForward(this.timeBased ? speed : this.translateSpeed);
+			const speed = getTranslateSpeed('w');
+			this.camara.moveForward(speed);
 		}
 		if (this.keysPressed['s']) {
-			let speed = (now - this.keysPressed['s']) / this.translateFactor;
-			this.keysPressed['s'] = now;
-			this.camara.moveBackward(this.timeBased ? speed : this.translateSpeed);
+			const speed = getTranslateSpeed('s')
+			this.camara.moveBackward(speed);
 		}
 		if (this.keysPressed['a']) {
-			let speed = (now - this.keysPressed['a']) / this.translateFactor;
-			this.keysPressed['a'] = now;
-			this.camara.moveLeft(this.timeBased ? speed : this.translateSpeed);
+			const speed = getTranslateSpeed('a');
+			this.camara.moveLeft(speed);
 		}
 		if (this.keysPressed['d']) {
-			let speed = (now - this.keysPressed['d']) / this.translateFactor;
-			this.keysPressed['d'] = now;
-			this.camara.moveRight(this.timeBased ? speed : this.translateSpeed);
+			const speed = getTranslateSpeed('d');
+			this.camara.moveRight(speed);
 		}
 		if (this.keysPressed['ArrowLeft']) {
-			let speed = (now - this.keysPressed['ArrowLeft']) / this.rotateFactor;
-			this.keysPressed['ArrowLeft'] = now;
-			this.camara.rotateLeft(this.timeBased ? speed : this.rotateSpeed);
+			this.camara.rotateLeft(getRotateSpeed('ArrowLeft'));
 		}
 		if (this.keysPressed['ArrowRight']) {
-			let speed = (now - this.keysPressed['ArrowRight']) / this.rotateFactor;
-			this.keysPressed['ArrowRight'] = now;
-			this.camara.rotateRight(this.timeBased ? speed : this.rotateSpeed);
+			this.camara.rotateRight(getRotateSpeed('ArrowRight'));
 		}
 		if (this.keysPressed['ArrowUp']) {
-			let speed = (now - this.keysPressed['ArrowUp']) / this.rotateFactor;
-			this.keysPressed['ArrowUp'] = now;
-			this.camara.rotateForward(this.timeBased ? speed : this.rotateSpeed);
+			this.camara.rotateForward(getRotateSpeed('ArrowUp'));
 		}
 		if (this.keysPressed['ArrowDown']) {
-			let speed = (now - this.keysPressed['ArrowDown']) / this.rotateFactor;
-			this.keysPressed['ArrowDown'] = now;
-			this.camara.rotateBackward(this.timeBased ? speed : this.rotateSpeed);
+			this.camara.rotateBackward(getRotateSpeed('ArrowDown'));
 		}
 		if (this.mouseLook) {
 			this.camara.rotx = this.mouseX * this.rotateFactor;
@@ -240,15 +252,16 @@ class App {
 			mat4.rotateY(this.viewMatrix, this.viewMatrix, this.camara.roty);
 			mat4.translate(this.viewMatrix, this.viewMatrix, this.camara.getLocation());
 			this.setViewMatrix();
+			this.player.updateVertexData(-this.camara.x, -this.camara.y-2, -this.camara.z-10);
 			this.camara.change = false;
 		}
 	}
 
 	updateState() {
-		let sunRotx = (performance.now()/1333) % this.TAU;
-		let sunRoty = (performance.now()/917) % this.TAU;
-		let sunRotz = (performance.now()/577) % this.TAU;
-		let sunPoint = [Math.sin(sunRotx)*15.0, Math.sin(sunRoty)*15.0, Math.sin(sunRotz)*15.0];
+		const sunRotx = (performance.now()/1333) % this.TAU;
+		const sunRoty = (performance.now()/917) % this.TAU;
+		const sunRotz = (performance.now()/577) % this.TAU;
+		const sunPoint = [Math.sin(sunRotx)*15.0, Math.sin(sunRoty)*15.0, Math.sin(sunRotz)*15.0];
 
 		this.textureAndLightProgramInfo.use();
 		this.textureAndLightProgramInfo.setLightPoint(sunPoint);
@@ -277,6 +290,10 @@ class App {
 
 		this.terrainProgramInfo.use();
 		this.terrainRenderer.render();
+
+		this.playerProgramInfo.use();
+		this.playerRenderer.checkUpdates();
+		this.playerRenderer.render();
 	}
 
 	gameLoop() {
