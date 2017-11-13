@@ -10,6 +10,11 @@ class ThirdPersonCamara {
         this.z = z;
         this.rotx = rotx;
         this.roty = roty;
+        this.rotxMin = 0.0;
+        this.rotxMax = 1.0;
+        this.distBackBase = 10;
+        this.distBackFactor = 100;
+        this.updateDistBack();
         this.origin = [0, 0, 0];
         this.change = true;
     }
@@ -23,11 +28,22 @@ class ThirdPersonCamara {
     }
 
     move(vector) {
-        let [dx, dy, dz] = vector;
+        const [dx, dy, dz] = vector;
         this.x += dx;
         this.y += dy;
         this.z += dz;
         this.change = true;
+    }
+
+    setFocus(vector) {
+        const relativeVector = [0, 0, -this.distBack];
+        this.worldOrientToCamaraOrient(relativeVector);
+        const [x, y, z] = vector;
+        const [dx, dy, dz] = relativeVector;
+        this.x = -x + dx;
+        this.y = -y + dy;
+        this.z = -z + dz;
+        this.change = true;        
     }
 
     worldOrientToCamaraOrient(v) {
@@ -61,7 +77,8 @@ class ThirdPersonCamara {
     }
 
     rotateBackward(r) {
-        this.rotx += r;
+        this.rotx = Math.max(Math.min(this.rotx+r, this.rotxMax), this.rotxMin);
+        this.updateDistBack();
         this.change = true;
     }
 
@@ -72,5 +89,9 @@ class ThirdPersonCamara {
     rotateRight(r) {
         this.roty += r;
         this.change = true;
+    }
+
+    updateDistBack() {
+        this.distBack = this.distBackBase + this.rotx*this.distBackFactor;
     }
 }

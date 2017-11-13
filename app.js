@@ -1,6 +1,6 @@
 class App {
 	constructor() {
-		this.camara = new ThirdPersonCamara(0, 0, -50, 0, 0);
+		this.camara = new ThirdPersonCamara(0, 0, -50, 0.5, 0);
 		this.keysPressed = {};
 		this.mouseX = 0;
 		this.mouseY = 0;
@@ -76,8 +76,7 @@ class App {
 	}
 
 	initWebGLSettings() {
-		// gl.clearColor(0.8, 0.9, 1.0, 1.0); // light blue
-		this.gl.clearColor(0.0, 0.0, 0.0, 1.0); // black
+		this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
 		this.gl.enable(this.gl.DEPTH_TEST);
 		this.gl.depthFunc(this.gl.LEQUAL);
 	}
@@ -198,34 +197,39 @@ class App {
 	processMovement() {
 		const now = performance.now();
 
+		let change = false;
+
 		const getTranslateSpeed = key => {
 			const speed = (now - this.keysPressed[key]) / this.translateFactor;
 			this.keysPressed[key] = now;
+			change = true;
 			return this.timeBased ? speed : this.translateSpeed;
 		};
 
 		const getRotateSpeed = key => {
 			const speed = (now - this.keysPressed[key]) / this.rotateFactor;
 			this.keysPressed[key] = now;
+			change = true;
 			return this.timeBased ? speed : this.rotateSpeed;
 		};
 
 		if (this.keysPressed['w']) {
 			const speed = getTranslateSpeed('w');
-			this.camara.moveForward(speed);
+			this.player.moveForward(speed, this.camara.roty);
 		}
 		if (this.keysPressed['s']) {
-			const speed = getTranslateSpeed('s')
-			this.camara.moveBackward(speed);
+			const speed = getTranslateSpeed('s');
+			this.player.moveBackward(speed, this.camara.roty);
 		}
 		if (this.keysPressed['a']) {
 			const speed = getTranslateSpeed('a');
-			this.camara.moveLeft(speed);
+			this.player.moveLeft(speed, this.camara.roty);
 		}
 		if (this.keysPressed['d']) {
 			const speed = getTranslateSpeed('d');
-			this.camara.moveRight(speed);
+			this.player.moveRight(speed, this.camara.roty);
 		}
+
 		if (this.keysPressed['ArrowLeft']) {
 			this.camara.rotateLeft(getRotateSpeed('ArrowLeft'));
 		}
@@ -238,21 +242,22 @@ class App {
 		if (this.keysPressed['ArrowDown']) {
 			this.camara.rotateBackward(getRotateSpeed('ArrowDown'));
 		}
+		
 		if (this.mouseLook) {
 			this.camara.rotx = this.mouseX * this.rotateFactor;
 			this.camara.roty += this.mouseY;
 			this.camara.change = true;
 		}
-		if (this.camara.change) {
-			if (this.camara.y > -1.0) {
+		if (change || this.camara.change) {
+			if (this.player.y > -1.0) {
 				this.camara.y = -1.0;
 			}
+			this.camara.setFocus(this.player.getLocation());
 			mat4.identity(this.viewMatrix);
 			mat4.rotateX(this.viewMatrix, this.viewMatrix, this.camara.rotx);
 			mat4.rotateY(this.viewMatrix, this.viewMatrix, this.camara.roty);
 			mat4.translate(this.viewMatrix, this.viewMatrix, this.camara.getLocation());
 			this.setViewMatrix();
-			this.player.updateVertexData(-this.camara.x, -this.camara.y-2, -this.camara.z-10);
 			this.camara.change = false;
 		}
 	}

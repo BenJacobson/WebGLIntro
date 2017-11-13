@@ -1,36 +1,61 @@
 class Player {
     constructor(x=0, y=0, z=0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.vertexLength = 24;
         this.vertexComponents = 3;
+        this.vertexData = new Array(Player.prototype.vertexData.length);
         this.updateVertexData(x, y, z);
         this.vertexDataUpdated = false;
+        this.origin = [0, 0, 0];
     }
 
-    updateVertexData(x, y, z) {
-        this.vertexData = Player.prototype.vertexData.map((v, i) => {
-            let offset = i % this.vertexComponents;
-            return v +
-                (offset == 0 ? x : 0) +
-                (offset == 1 ? y : 0) +
-                (offset == 2 ? z : 0);
+    updateVertexData(dx, dy, dz) {
+        this.x += dx;
+        this.y += dy;
+        this.z += dz;
+        Player.prototype.vertexData.forEach((v, i) => {
+            const offset = i % this.vertexComponents;
+            this.vertexData[i] = v +
+                (offset == 0 ? this.x : 0) +
+                (offset == 1 ? this.y : 0) +
+                (offset == 2 ? this.z : 0);
         });
         this.vertexDataUpdated = true;
     }
 
-    moveForward(d) {
-        this.updateVertexData(0, 0, d);
+    getLocation() {
+        return [this.x, this.y, this.z];
     }
 
-    moveBackward(d) {
-        this.moveForward(-d);
+    getInvLocation() {
+        return [-this.x, -this.y, -this.z];
     }
 
-    moveLeft(d) {
-        this.updateVertexData(d, 0, 0);
+    worldOrientToViewOrient(v, roty) {
+        vec3.rotateY(v, v, this.origin, -roty);
+        return v;
     }
 
-    moveRight(d) {
-        this.moveLeft(-d);
+    moveForward(d, roty) {
+        this.moveBackward(-d, roty);
+    }
+
+    moveBackward(d, roty) {
+        const v = [0, 0, d];
+        this.worldOrientToViewOrient(v, roty);
+        this.updateVertexData.apply(this, v);
+    }
+
+    moveLeft(d, roty) {
+        this.moveRight(-d, roty);
+    }
+
+    moveRight(d, roty) {
+        const v = [d, 0, 0];
+        this.worldOrientToViewOrient(v, roty);
+        this.updateVertexData.apply(this, v);
     }
 }
 
@@ -64,38 +89,6 @@ Player.prototype.normalData = [
     0.0, -1.0, 0.0,
     0.0, -1.0, 0.0,
     0.0, -1.0, 0.0,
-];
-
-Player.prototype.textureCoords = [
-    0.0, 0.0,
-    0.0, 1.0,
-    1.0, 1.0,
-    1.0, 0.0,
-
-    0.0, 0.0,
-    1.0, 0.0,
-    1.0, 1.0,
-    0.0, 1.0,
-
-    1.0, 1.0,
-    0.0, 1.0,
-    0.0, 0.0,
-    1.0, 0.0,
-
-    1.0, 1.0,
-    1.0, 0.0,
-    0.0, 0.0,
-    0.0, 1.0,
-
-    0.0, 0.0,
-    0.0, 1.0,
-    1.0, 1.0,
-    1.0, 0.0,
-
-    1.0, 1.0,
-    1.0, 0.0,
-    0.0, 0.0,
-    0.0, 1.0,
 ];
 
 Player.prototype.vertexData = [
