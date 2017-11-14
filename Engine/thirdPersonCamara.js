@@ -4,10 +4,8 @@ class ThirdPersonCamara {
         return Math.PI * 2;
     }
     
-    constructor(x, y, z, rotx, roty) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+    constructor(rotx, roty) {
+        this.x = this.y = this.z = 0;
         this.rotx = rotx;
         this.roty = roty;
         this.rotxMin = 0.0;

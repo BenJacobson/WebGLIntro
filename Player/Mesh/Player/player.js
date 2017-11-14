@@ -1,8 +1,6 @@
 class Player {
     constructor(x=0, y=0, z=0) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.x = this.y = this.z = 0;
         this.vertexLength = 24;
         this.vertexComponents = 3;
         this.vertexData = new Array(Player.prototype.vertexData.length);
@@ -15,14 +13,22 @@ class Player {
         this.x += dx;
         this.y += dy;
         this.z += dz;
+        const offsets = [this.x, this.y, this.z];
         Player.prototype.vertexData.forEach((v, i) => {
-            const offset = i % this.vertexComponents;
-            this.vertexData[i] = v +
-                (offset == 0 ? this.x : 0) +
-                (offset == 1 ? this.y : 0) +
-                (offset == 2 ? this.z : 0);
+            this.vertexData[i] = v + offsets[i % offsets.length];
         });
         this.vertexDataUpdated = true;
+    }
+
+    * boundingBox() {
+        const points = [-1, 1];
+        for (const dx of points) {
+            for (const dy of points) {
+                for (const dz of points) {
+                    yield [this.x+dx, this.y+dy, this.z+dz];
+                }
+            }
+        }
     }
 
     getLocation() {

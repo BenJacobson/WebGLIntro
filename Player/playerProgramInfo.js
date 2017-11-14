@@ -9,6 +9,7 @@ class PlayerProgramInfo extends ProgramInfo {
         // uniforms
         this.mViewLocation = this.getUniformLocation('mView');
         this.mProjLocation = this.getUniformLocation('mProj');
+        this.colorLocation = this.getUniformLocation('color');
 
         // attributes
         this.vertexDataLocation = this.getAttribLocation('vertexData');
@@ -20,5 +21,9 @@ class PlayerProgramInfo extends ProgramInfo {
 
     setProjMatrix(projMatrix) {
         this.gl.uniformMatrix4fv(this.mProjLocation, this.gl.FALSE, projMatrix);
+    }
+
+    setColor(color) {
+        this.gl.uniform3fv(this.colorLocation, color);
     }
 }

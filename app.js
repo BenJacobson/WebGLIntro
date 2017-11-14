@@ -1,6 +1,7 @@
 class App {
 	constructor() {
-		this.camara = new ThirdPersonCamara(0, 0, -50, 0.5, 0);
+		this.camara = new ThirdPersonCamara(0.5, 0);
+		this.origin = [0, 0, 0];
 		this.keysPressed = {};
 		this.mouseX = 0;
 		this.mouseY = 0;
@@ -82,16 +83,29 @@ class App {
 	}
 
 	initScene() {
+		this.terrainProgramInfo = new TerrainProgramInfo(this.gl, this.assetMap.get(this.terrainVert), this.assetMap.get(this.terrainFrag));
+		this.terrainRenderer = new TerrainRenderer(this.terrainProgramInfo);
+
 		this.textureAndLightProgramInfo = new TextureAndLightProgramInfo(this.gl, this.assetMap.get(this.textureAndLightVert), this.assetMap.get(this.textureAndLightFrag));
 
-		const blockMeshes = [new Block(10, -2.55, 10), new Block(-10, -2.55, 10), new Block(10, -2.55, -10), new Block(-10, -2.55, -10)];
+		const size = 2.0;
+		const y = size;
+		const radius = Terrain.prototype.radius;
+		const radiusSquared = radius * radius;
+		this.blockMeshes = [
+			new Block(10, y, 10, size),
+			new Block(-10, y, 10, size),
+			new Block(10, y, -10, size),
+			new Block(-10, y, -10, size)
+		];
 		for (let i = 0; i < 1000; i++) {
-			const x = Math.floor(Math.random()*1000) - 500;
-			const y = -2.55;
-			const z = Math.floor(Math.random()*1000) - 500;
-			blockMeshes.push(new Block(x, y, z));
+			const x = Math.random() * radius * (Math.random() > 0.5 ? 1 : -1);
+			const z = Math.random() * radius * (Math.random() > 0.5 ? 1 : -1);
+			if (Math.abs(x) * Math.abs(z) < radiusSquared) {
+				this.blockMeshes.push(new Block(x, y, z, size));
+			}
 		}
-		this.blockRenderer = new BlockRenderer(this.textureAndLightProgramInfo, blockMeshes, ['block-texture']);
+		this.blockRenderer = new BlockRenderer(this.textureAndLightProgramInfo, this.blockMeshes, ['block-texture']);
 
 		this.lightBlock = new Block(0, 0, 0);
 		const lightMeshes = [this.lightBlock];
@@ -104,11 +118,8 @@ class App {
 		this.skyBoxProgramInfo = new SkyBoxProgramInfo(this.gl, this.assetMap.get(this.skyBoxVert), this.assetMap.get(this.skyBoxFrag));
 		this.skyBoxRenderer = new SkyBoxRenderer(this.skyBoxProgramInfo);
 
-		this.terrainProgramInfo = new TerrainProgramInfo(this.gl, this.assetMap.get(this.terrainVert), this.assetMap.get(this.terrainFrag));
-		this.terrainRenderer = new TerrainRenderer(this.terrainProgramInfo);
-
 		this.playerProgramInfo = new PlayerProgramInfo(this.gl, this.assetMap.get(this.playerVert), this.assetMap.get(this.playerFrag));
-		this.player = new Player();
+		this.player = new Player(0, 1.0, 0);
 		this.playerRenderer = new PlayerRenderer(this.playerProgramInfo, this.player);
 
 		mat4.identity(this.viewMatrix);
@@ -194,6 +205,17 @@ class App {
 		this.playerProgramInfo.setViewMatrix(this.viewMatrix);
 	}
 
+	collision() {
+		for (const point of this.player.boundingBox()) {
+			for (const block of this.blockMeshes) {
+				if (block.contains.apply(block, point)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	processMovement() {
 		const now = performance.now();
 
@@ -242,7 +264,7 @@ class App {
 		if (this.keysPressed['ArrowDown']) {
 			this.camara.rotateBackward(getRotateSpeed('ArrowDown'));
 		}
-		
+
 		if (this.mouseLook) {
 			this.camara.rotx = this.mouseX * this.rotateFactor;
 			this.camara.roty += this.mouseY;
@@ -259,6 +281,13 @@ class App {
 			mat4.translate(this.viewMatrix, this.viewMatrix, this.camara.getLocation());
 			this.setViewMatrix();
 			this.camara.change = false;
+
+			this.playerProgramInfo.use();
+			if (this.collision()) {
+				this.playerProgramInfo.setColor([1.0, 0.0, 0.0]);
+			} else {
+				this.playerProgramInfo.setColor([0.0, 0.0, 1.0]);
+			}
 		}
 	}
 
